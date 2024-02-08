@@ -5,18 +5,18 @@ from pages.components.pro_ring import ProRing
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
 class NewPassword(UserControl):
-    def __init__(self, passID, title, sender_email, sender_name, sender_surname):
+    def __init__(self, passID, title, sender_email, sender_name, sender_surname, homepage):
         super().__init__()
         self.__passID = passID
         self.__title = title
         self.__sender_email = sender_email
         self.__sender_name = sender_name
         self.__sender_surname = sender_surname
-        
-    def attempt_confirm(self, homepage):
         self.__homepage = homepage
+        
+    def attempt_confirm(self):
         if self.__check_box.value == True:
-            data = self.__homepage.get_manager().accept_pending_share(self.__passID)
+            data = self.__homepage.get_manager().accept_pending_share(self.__passID, "accept")
             self.__homepage.get_page().snack_bar = SnackBar(
                 content=Text(f"Password uploaded with code: {data.lower() if data else "None"}",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
@@ -24,6 +24,13 @@ class NewPassword(UserControl):
                 margin=5,
                 duration=3000,
             )
+        else:
+            self.__homepage.get_manager().accept_pending_share(self.__passID, "no action") 
+            
+    def __delete(self,e):
+        self.__homepage.get_manager().accept_pending_share(self.__passID, "reject")
+        self.__row.controls = []
+        self.__row.update()
             
     def check_box_true(self):
         self.__check_box.value = True
@@ -31,6 +38,7 @@ class NewPassword(UserControl):
     
     def build(self):
         self.__check_box = Checkbox(value=False)
+        self.__delete_button = IconButton(icon=icons.DELETE, on_click=self.__delete, color="red")
         self.__row = Row(
             controls=[
                 Column(
@@ -58,54 +66,6 @@ class ReceiveShared(UserControl):
         self.__processing = False
         self.__receiving_password_list = []
         
-        
-    def __download(self,e):
-        if not self.__processing:
-            self.__processing = True
-            self.__stack.controls.append(ProRing())
-            self.__stack.update()
-            data = self.__homepage.get_manager().get_pending_shares()
-            if data == "NO PENDING PASSWORDS":
-                self.__homepage.get_page().snack_bar = SnackBar(
-                    content=Text("No passwords have been shared with you",color=TEXT_COLOUR),
-                    bgcolor=BACKGROUND_COLOUR_2,
-                    elevation=5,
-                    margin=5,
-                    duration=3000,
-                )
-                self.__homepage.get_page().snack_bar.open = True
-                self.__homepage.get_page().update()
-                self.__homepage.get_navrail().set_selected_index(0)
-                self.__homepage.get_navrail().get_nav().update()
-                self.__homepage.destination_change(None)
-            else:
-                self.__col.controls = self.__col.controls[:4]
-                self.__col.controls.extend([
-                    Text("Select the passwords you would like to accept", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
-                    Row(
-                        controls=[
-                            VerticalDivider(color="transparent", width=1),
-                            ElevatedButton("Select All", on_click=self.__select_all),
-                        ],
-                        spacing=20,
-                        alignment=MainAxisAlignment.SPACE_BETWEEN,
-                        vertical_alignment=CrossAxisAlignment.CENTER,
-                    )
-                ])
-                for element in data:
-                    self.__receiving_password_list.append(NewPassword(passID=element[0], title=element[1], sender_email=element[2], sender_name=element[3], sender_surname=element[4]))
-                    self.__col.controls.extend([
-                        self.__receiving_password_list[-1], #add the last element of the list
-                        Divider(height=2,color=BACKGROUND_COLOUR_2)
-                    ])
-                self.__col.controls.extend([
-                    Divider(height=10,color="transparent"),
-                    ElevatedButton("Confirm", on_click=self.__upload)
-                ])
-                self.__col.update()
-                self.__stack.controls.pop()
-                self.__stack.update()
-                self.__processing = False
          
     def __select_all(self,e):
         if not self.__processing:
@@ -118,7 +78,7 @@ class ReceiveShared(UserControl):
             self.__stack.controls.append(ProRing())
             self.__stack.update()
             for element in self.__receiving_password_list:
-                element.attempt_confirm(self.__homepage)
+                element.attempt_confirm()
             self.__homepage.get_page().snack_bar = SnackBar(
                 content=Text("Accepted passwords have been added to your account",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
@@ -141,49 +101,56 @@ class ReceiveShared(UserControl):
     def build(self):
         self.__back_button = IconButton(icon=icons.ARROW_BACK,on_click=self.__back)
         self.__col = Column(
-            controls=[
-                Row(
-                    controls=[
-                        self.__back_button,
-                        Icon(icons.CLOUD_DOWNLOAD, size=50, color=TEXT_COLOUR),
-                        VerticalDivider(color="transparent",width=25),
-                    ],
-                    spacing=20,
-                    vertical_alignment=CrossAxisAlignment.START,
-                    alignment=MainAxisAlignment.SPACE_BETWEEN,
-                ),
-                Divider(height=50,color="transparent"),
-                Row(controls=[
-                    VerticalDivider(width=1,color="transparent"),
-                    Text("Would you like to download passwords that\nhave been shared with you now?", size=15, font_family="Afacad", color=TEXT_COLOUR),
-                    VerticalDivider(width=1,color="transparent"),
-                    ],
-                    spacing=5,
-                    alignment=MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=CrossAxisAlignment.CENTER,
-                ),
-                Divider(height=20,color="transparent"),
-                Row(
-                    controls=[
-                        VerticalDivider(width=2,color="transparent"),
-                        ElevatedButton("Return", on_click=self.__back),
-                        ElevatedButton("Continue", on_click=self.__download),
-                        VerticalDivider(width=2,color="transparent"),
-                    ],
-                    spacing=20,
-                    alignment=MainAxisAlignment.SPACE_BETWEEN,
-                    vertical_alignment=CrossAxisAlignment.CENTER,
-                )
-            ],
+            controls=[],
             spacing=20,
             alignment=MainAxisAlignment.START,
             horizontal_alignment=CrossAxisAlignment.CENTER,
-            # TODO sort out scroll causing page to center
-            # scroll=ScrollMode.AUTO,
         )
         self.__stack = Stack(
             controls=[
                 self.__col,
             ],
         )
+        
+        data = self.__homepage.get_manager().get_pending_shares()
+        
+        if data == "NO PENDING PASSWORDS":
+            self.__homepage.get_page().snack_bar = SnackBar(
+                content=Text("No passwords have been shared with you",color=TEXT_COLOUR),
+                bgcolor=BACKGROUND_COLOUR_2,
+                elevation=5,
+                margin=5,
+                duration=3000,
+            )
+            self.__homepage.get_page().snack_bar.open = True
+            self.__homepage.get_page().update()
+            self.__homepage.get_navrail().set_selected_index(0)
+            self.__homepage.get_navrail().get_nav().update()
+            self.__homepage.destination_change(None)
+        else:
+            self.__col.controls = self.__col.controls[:4]
+            self.__col.controls.extend([
+                Text("Select the passwords you would like to accept", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
+                Row(
+                    controls=[
+                        VerticalDivider(color="transparent", width=1),
+                        ElevatedButton("Select All", on_click=self.__select_all),
+                    ],
+                    spacing=20,
+                    alignment=MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=CrossAxisAlignment.CENTER,
+                )
+            ])
+            for element in data:
+                self.__receiving_password_list.append(NewPassword(passID=element[0], title=element[1], sender_email=element[2], sender_name=element[3], sender_surname=element[4], homepage=self.__homepage))
+                self.__col.controls.extend([
+                    self.__receiving_password_list[-1], #add the last element of the list
+                    Divider(height=2,color=BACKGROUND_COLOUR_2)
+                ])
+            self.__col.controls.extend([
+                Divider(height=10,color="transparent"),
+                ElevatedButton("Confirm", on_click=self.__upload)
+            ])
+        self.__col.update()
+        self.__stack.update()
         return self.__stack

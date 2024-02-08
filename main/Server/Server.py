@@ -1098,8 +1098,8 @@ def get_pending_passwordkeys(data):
                 curs.execute(f"SELECT Title FROM Passwords WHERE PassID='{passID}'")
                 title = curs.fetchone()[0]
                 info_to_return.append([passID, title, password_key, manager, sender_email, sender_forename, sender_names, symmetric_key])
-            curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
-            curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+            # curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
+            # curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
             curs.close()
             db.commit()
             db.close()
@@ -1217,7 +1217,7 @@ def insert_pending_keys(data):
     client_email=data["client_email"]
     passID=data["passID"]
     password_key=data["password_key"]
-    manager=data["manager"]
+    accept = data["accept"]
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
@@ -1225,27 +1225,26 @@ def insert_pending_keys(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            #check password doesn't already exist with same manager value
-            curs.execute(f"SELECT Manager FROM PasswordKeys WHERE UserID='{temp_UserID}' AND PassID='{passID}'")
-            try:
-                manager_fetch_attempt = curs.fetchone()[0]
-                #check if manager is the same
-                if manager_fetch_attempt == 1:
-                    curs.close()
-                    db.close()
-                    return "PASSWORD ALREADY EXISTS"
-                else:
-                    curs.execute(f"UPDATE PasswordKeys SET Manager={1} WHERE UserID='{temp_UserID}' AND PassID='{passID}'")
-                    curs.close()
-                    db.commit()
-                    db.close()
-                    return "PASSWORD ALREADY EXISTS BUT MANAGER ADDED"
-            except Exception as e:
+            if accept == "Accept":
+                #get manager (can't rely on client input)
+                curs.execute(f"SELECT Manager FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
+                manager = curs.fetchone()[0]
                 curs.execute(f"INSERT INTO PasswordKeys(PassID, UserID, PasswordKey, Manager) VALUES ('{passID}','{temp_UserID}','{password_key}','{manager}')")
                 curs.close()
                 db.commit()
                 db.close()
                 return "PASSWORD ADDED"
+            elif accept == "Reject":
+                curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
+                curs.close()
+                db.commit()
+                db.close()
+                return "PASSWORD DECLINED"
+            else:
+                curs.close()
+                db.commit()
+                db.close()
+                return "NO ACTION"
         except Exception as e:
             write_errors(traceback.format_exc(),"Inserting pending keys")
             return ["FAILED",traceback.format_exc()]
@@ -1275,109 +1274,83 @@ def receive_data():
                 
         elif Encryption.validate_error_check(data["error_check"]):
             if header == "reset_client_sharing_key":
-                data_to_return = Encryption.reset_client_sharing_keys(
-                    data
-                )
+                data_to_return = Encryption.reset_client_sharing_keys(data)
+
             elif header == "authenticate_password":
-                data_to_return = authenticate_password(
-                    data
-                )
+                data_to_return = authenticate_password(data)
+
             elif header == "add_new_device":
-                data_to_return = create_new_device(
-                    data
-                )
+                data_to_return = create_new_device(data)
+
             elif header == "confirm_device_code":
-                data_to_return = confirm_device_code(
-                    data
-                )
+                data_to_return = confirm_device_code(data)
+
             elif header == "add_new_user":
-                data_to_return = create_new_user(
-                    data
-                )
+                data_to_return = create_new_user(data)
+
             elif header == "confirm_new_user":
-                data_to_return = confirm_new_user(
-                    data
-                )
+                data_to_return = confirm_new_user(data)
+
             elif header == "reset_client_password":
-                data_to_return = reset_client_password(
-                    data
-                )
+                data_to_return = reset_client_password(data)
+
             elif header == "get_password_overview":
-                data_to_return = get_password_overview(
-                    data
-                )
+                data_to_return = get_password_overview(data)
+
             elif header == "get_username":
-                data_to_return = get_username(
-                    data
-                )
+                data_to_return = get_username(data)
+
             elif header == "get_password":
-                data_to_return = get_password(
-                    data
-                )
+                data_to_return = get_password(data)
+
             elif header == "get_all_passwords":
-                data_to_return = get_all_passwords(
-                    data
-                )
+                data_to_return = get_all_passwords(data)
+
             elif header == "set_to_lockdown":
-                data_to_return = set_to_lockdown(
-                    data
-                )
+                data_to_return = set_to_lockdown(data)
+
             elif header == "remove_lockdown":
-                data_to_return = remove_lockdown(
-                    data
-                )
+                data_to_return = remove_lockdown(data)
+
             elif header == "add_new_password":
-                data_to_return = add_new_password(
-                    data
-                )
+                data_to_return = add_new_password(data)
+
             elif header == "delete_password":
-                data_to_return = delete_password(
-                    data
-                )
+                data_to_return = delete_password(data)
+
             elif header == "add_manager":
-                data_to_return = add_manager(
-                    data
-                )
+                data_to_return = add_manager(data)
+
             elif header == "get_password_users":
-                data_to_return = get_password_users(
-                    data
-                )
+                data_to_return = get_password_users(data)
+
             elif header == "remove_password_user":
-                data_to_return = remove_password_user(
-                    data
-                )
+                data_to_return = remove_password_user(data)
+
             elif header == "delete_password_instance":
-                data_to_return = delete_password_instance(
-                    data
-                )
+                data_to_return = delete_password_instance(data)
+
             elif header == "update_password":
-                data_to_return = update_password(
-                    data
-                )
+                data_to_return = update_password(data)
+
             elif header == "get_pending_passwordkeys":
-                data_to_return = get_pending_passwordkeys(
-                    data
-                )
+                data_to_return = get_pending_passwordkeys(data)
+
             elif header == "get_emails_sharing":
-                data_to_return = get_emails_sharing(
-                    data
-                )
+                data_to_return = get_emails_sharing(data)
+
             elif header == "share_password":
-                data_to_return = share_password(
-                    data
-                )
+                data_to_return = share_password(data)
+
             elif header == "insert_pending_keys":
-                data_to_return = insert_pending_keys(
-                    data
-                )
+                data_to_return = insert_pending_keys(data)
+
             elif header == "get_public_key":  # get public key of client for password sharing
-                data_to_return = get_public_key(
-                    data
-                )
+                data_to_return = get_public_key(data)
+
             elif header == "update_public_keys":
-                data_to_return = Encryption.reset_client_sharing_keys(
-                    data
-                )
+                data_to_return = Encryption.reset_client_sharing_keys(data)
+
 
 
 

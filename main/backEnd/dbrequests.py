@@ -434,14 +434,14 @@ class PyAnyWhereRequests:
             return PyAnyWhereRequests.share_password(server_public_key, session_key, client_email, passID, password_key, recipient_UserID, manager, encrypted_sharing_symmetric_key)
             
     @staticmethod
-    def insert_pending_keys(server_public_key, session_key, client_email, passID, password_key, manager):
+    def insert_pending_keys(server_public_key, session_key, client_email, passID, password_key, accept):
         client_public_key, client_private_key, symmetric_key, encrypted_symmetric_key = PyAnyWhereRequests.create_encryption_keys(server_public_key)
         data = {
             "session_key": session_key,
             "client_email": client_email,
             "passID": passID,
             "password_key": password_key,
-            "manager": manager,
+            "accept": accept,
             "error_check": Generate.create_error_check(),
         }
         encrypted_data = Encrypt.encrypt_data_to_server(data, symmetric_key)
@@ -450,7 +450,7 @@ class PyAnyWhereRequests:
             formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
             return formated_data
         except Exception as e:
-            return PyAnyWhereRequests.insert_pending_keys(server_public_key, session_key, client_email, passID, password_key, manager)
+            return PyAnyWhereRequests.insert_pending_keys(server_public_key, session_key, client_email, passID, password_key, accept)
             
     @staticmethod
     def get_public_key(server_public_key, session_key, recipient_UserID):

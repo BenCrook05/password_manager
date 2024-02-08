@@ -54,7 +54,6 @@ def main(page: Page):
         )
         page.update()
         if page.route == "/":
-            
             starttime = datetime.now()
             page.views[-1].controls[1].attempt_auto_login()
             print(f"Time to load: {datetime.now() - starttime}")

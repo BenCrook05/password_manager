@@ -179,7 +179,7 @@ class Manager():
                 data_to_return.append(password_info[0:2] + password_info[4:7]) #returns passID, title, sender_email, sender_name, sender_surname
             return data_to_return #in form of 2d array
         
-    def accept_pending_share(self,passID):
+    def accept_pending_share(self,passID,accept):
         #check passID matches that in pending passwords
         for element in self.__pending_passwords:
             if element[0] == passID:
@@ -194,10 +194,9 @@ class Manager():
                 print(f"Encrypted password key from accept pending share: {encrypted_password_key}")
                 password_key = Decrypt.decrypt_password_key_to_share(encrypted_password_key, symmetric_key)
                 print(f"Decrypted password key from accept pending share: {password_key}")
-                manager = element[3]
                 print("Inserting pending password into database")
                 password_key = Encrypt.encrypt_password_key(password_key, self.__client_permanent_key)
-                data = pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,password_key,manager)
+                data = pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,password_key,accept)
                 self.__pending_passwords.remove(element)
                 return data
             

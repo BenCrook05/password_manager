@@ -209,6 +209,8 @@ class Home(UserControl):
         self.__main_container.update()
     
     def __get_pending_passwords(self):
+        self.__main_container.content = ProRing()
+        self.__main_container.update()
         self.__main_container.content = ReceiveShared(self, self.__data)
         self.__main_container.update()
     
