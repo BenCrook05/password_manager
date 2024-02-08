@@ -341,6 +341,25 @@ class PyAnyWhereRequests:
         except Exception as e:
             print(traceback.format_exc())
             return PyAnyWhereRequests.delete_password_instance(server_public_key, session_key, client_email, passID, new_manager_email)
+           
+    @staticmethod
+    def remove_password_user(server_public_key, session_key, client_email, passID, user_email):
+        client_public_key, client_private_key, symmetric_key, encrypted_symmetric_key = PyAnyWhereRequests.create_encryption_keys(server_public_key)
+        data = {
+            "session_key": session_key,
+            "client_email": client_email,
+            "passID": passID,
+            "user_email": user_email,
+            "error_check": Generate.create_error_check(),
+        }
+        encrypted_data = Encrypt.encrypt_data_to_server(data, symmetric_key)
+        data_to_return = PyAnyWhereRequests.send_request("remove_password_user", encrypted_data, client_public_key = client_public_key, encrypted_symmetric_key = encrypted_symmetric_key)
+        try:
+            formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
+            return formated_data
+        except Exception as e:
+            return PyAnyWhereRequests.remove_password_user(server_public_key, session_key, client_email, passID, user_email)
+                
             
     @staticmethod
     def update_password(server_public_key, session_key, client_email, passID, new_info,type):

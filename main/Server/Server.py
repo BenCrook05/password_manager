@@ -560,7 +560,12 @@ def get_password_overview(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            curs.execute(f"SELECT URL, Title, Username, Passwords.PassID, Manager FROM Passwords, PasswordKeys WHERE PasswordKeys.UserID='{temp_UserID}' AND PasswordKeys.PassID=Passwords.PassID AND Lockdown = 0") # only gets passwords not in lockdown
+            curs.execute(f"""
+                SELECT URL, Title, Username, Passwords.PassID, Manager
+                FROM Passwords
+                JOIN PasswordKeys ON PasswordKeys.PassID = Passwords.PassID
+                WHERE PasswordKeys.UserID = '{temp_UserID}' AND Lockdown = 0
+            """) # only gets passwords not in lockdown
             temp_passwords = curs.fetchall()
             passwords = []
             curs.close()
@@ -610,7 +615,12 @@ def get_password(data):
                 curs.close()
                 db.close()
                 return "LOCKDOWN"
-            curs.execute(f"SELECT Password, AdditionalInfo, PasswordKey, Manager FROM Passwords, PasswordKeys WHERE Passwords.PassID='{temp_PassID}' AND PasswordKeys.PassID='{temp_PassID}' AND PasswordKeys.UserID='{temp_UserID}'")
+            curs.execute(f"""
+                SELECT URL, Title, Username, Passwords.PassID, Manager
+                FROM Passwords
+                JOIN PasswordKeys ON PasswordKeys.PassID = Passwords.PassID
+                WHERE PasswordKeys.UserID = '{temp_UserID}' AND Lockdown = 0
+            """)
             password, additional_info, password_key, manager = curs.fetchone()
             curs.close()
             db.close()
@@ -669,7 +679,12 @@ def get_all_passwords(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            curs.execute(f"SELECT Passwords.PassID FROM Passwords, PasswordKeys WHERE Passwords.PassID=PasswordKeys.PassID AND UserID='{temp_UserID}'")
+            curs.execute(f"""
+                SELECT Password, AdditionalInfo, PasswordKey, Manager
+                FROM Passwords
+                JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID
+                WHERE Passwords.PassID = '{temp_PassID}' AND PasswordKeys.UserID = '{temp_UserID}'
+            """)
             all_PassID = curs.fetchall()
             pass_info = []
             for ID in all_PassID:
@@ -752,9 +767,17 @@ def remove_lockdown(data):
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
             if temp_PassID == "all":
-                curs.execute("UPDATE Passwords JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID SET Lockdown=0 WHERE PasswordKeys.UserID='{temp_UserID}' AND PasswordKeys.Manager = 1")
+                curs.execute("""UPDATE Passwords 
+                    JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID 
+                    SET Lockdown=0 WHERE PasswordKeys.UserID='{temp_UserID}' 
+                    AND PasswordKeys.Manager = 1
+                """)
             else:
-                curs.execute(f"UPDATE Passwords JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID SET Lockdown=0 WHERE PasswordKeys.UserID='{temp_UserID}' AND Passwords.PassID='{temp_PassID}'")
+                curs.execute(f"""UPDATE Passwords 
+                    JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID 
+                    SET Lockdown=0 
+                    WHERE PasswordKeys.UserID='{temp_UserID}' AND Passwords.PassID='{temp_PassID}'
+                """)
                 #get users of passwords
                 curs.execute(f"SELECT Email FROM Users JOIN PasswordKeys ON Users.UserID = PasswordKeys.UserID WHERE PasswordKeys.PassID='{temp_PassID}'")
                 all_emails = curs.fetchall()
@@ -895,6 +918,39 @@ def get_manager_password_info(client_email, temp_PassID):
         write_errors(traceback.format_exc(),"Getting manager password info")
         return ["FAILED",traceback.format_exc()] #this won't get read anyway, but worth writing error to file
 
+#only used by managers
+def remove_password_user(data):
+    session_key = data["session_key"]
+    client_email = data["client_email"]
+    temp_PassID = data["passID"]
+    user_email = data["user_email"]
+    authenticated = authenticate_session_key(session_key)
+    if authenticated == True:
+        try:
+            temp_userID, manager = get_manager_password_info(client_email,temp_PassID)
+            if manager == 0:
+                return "NOT MANAGER"
+            if client_email == user_email:
+                return "CANNOT REMOVE SELF"
+            other_userID, other_manager = get_manager_password_info(user_email,temp_PassID)
+            if other_manager == 1:
+                return "CANNOT REMOVE MANAGER"
+            db = connect_to_db()
+            curs = db.cursor()
+            curs.execute(f"DELETE FROM PasswordKeys WHERE UserID='{other_userID}' AND PassID='{temp_PassID}'")
+            curs.close()
+            db.commit()
+            db.close()
+            send_email("SecureNet: Removed from Password", f"Your access to a shared password has been revoked.", user_email)
+            send_email("SecureNet: Removed User", f"You have revoked access to a shared password for {user_email}.\nIf this wasn't you, login to secure your account.", client_email)
+            return "REMOVED USER"
+        except Exception as e:
+            write_errors(traceback.format_exc(),"Removing password user")
+            return ["FAILED",traceback.format_exc()]
+    else:
+        return authenticated
+    
+
 # only used by managers
 def get_password_users(data):
     session_key=data["session_key"]
@@ -933,7 +989,7 @@ def get_password_users(data):
 
 def delete_password_instance(data):
     session_key=data["session_key"]
-    client_email=data["client_email"]
+    client_email=data["client_email"] 
     temp_PassID=data["passID"]
     new_manager_email=data["new_manager_email"]
     authenticated = authenticate_session_key(session_key)
@@ -1284,6 +1340,10 @@ def receive_data():
                 )
             elif header == "get_password_users":
                 data_to_return = get_password_users(
+                    data
+                )
+            elif header == "remove_password_user":
+                data_to_return = remove_password_user(
                     data
                 )
             elif header == "delete_password_instance":

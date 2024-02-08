@@ -164,6 +164,14 @@ class PassInfo:
         else:
             print("Not manager")
             return "NOT MANAGER"
+        
+    def remove_password_user(self,client_email,session_key,server_public_key,user_email):
+        print("Removing password user...")
+        if self._manager == 1:
+            if user_email == client_email:
+                return "CANNOT REMOVE SELF"
+            data = pr.remove_password_user(server_public_key,session_key,client_email,self._passID,user_email)
+            return data
 
 class Info(PassInfo):
     def __init__(self, passID, title, manager):

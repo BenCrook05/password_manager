@@ -11,8 +11,7 @@ from backEnd.hasher import Hash
 from backEnd.scan import PasswordChecker, PasswordGenerator
 import random
 import re
-import threading
-
+from threading import Thread
 
 # object created after user logged in to run actual password manager function
 class Manager():
@@ -37,6 +36,7 @@ class Manager():
         
     def __get_client_permanent_key(self):
         return Hash.create_client_permanent_key(self.__password, self.__email)
+    
     
     def __get_client_sharing_keys(self):
         #derive from client_password and the month.
@@ -136,7 +136,7 @@ class Manager():
         
     def get_all_passwords_full(self):
         passId_list = list(map(lambda x: x.get_passID(), self.__passwords))
-        threads = [threading.Thread(target=self.get_specific_password_info, args=(obj,)) for obj in passId_list]
+        threads = [Thread(target=self.get_specific_password_info, args=(obj,)) for obj in passId_list]
         for thread in threads:
             thread.start()
         for thread in threads:
@@ -144,8 +144,8 @@ class Manager():
             
     def get_all_managers_users(self):
         passId_list = list(map(lambda x: x.get_passID(), self.__passwords))
-        threads = [threading.Thread(target=self.get_password_users, args=(obj,)) for obj in passId_list]
-        threads += [threading.Thread(target=self.get_password_users, args=(obj, True)) for obj in passId_list]
+        threads = [Thread(target=self.get_password_users, args=(obj,)) for obj in passId_list]
+        threads += [Thread(target=self.get_password_users, args=(obj, True)) for obj in passId_list]
         for thread in threads:
             thread.start()
         for thread in threads:
@@ -396,6 +396,26 @@ class Manager():
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.remove_from_lockdown(passID,iterations=1)
         return data
+    
+    def remove_password_user(self, passID, user_email, iterations=0):
+        for password in self.__passwords:
+            if str(password.get_passID()) == str(passID):
+                data = password.remove_password_user(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key, user_emai=user_email)
+                if data in ["UNAUTHENTICATED","KEY EXPIRED", "NO KEY"]:
+                    if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
+                        return self.remove_password_user(passID,iterations=1)
+                elif data == "REMOVED USER":
+                    threads = [
+                        Thread(target=self.get_password_users, args=(self.__email, self.__session_key, self.__server_public_key)),
+                        Thread(target=self.get_password_managers, args=(self.__email, self.__session_key, self.__server_public_key))
+                    ]
+                    for thread in threads:
+                        thread.start()
+                    for thread in threads:
+                        thread.join()
+                    #runs reqeusts in parallel
+                return data
+              
                 
     def remove_all_locked_down_passwords(self, online=False):
         if online:

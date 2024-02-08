@@ -1,11 +1,16 @@
 
-import math
-from collections import Counter
 
-while  True:
-    password = input("Enter a password: ")
-    freq = Counter(password)
-    length = len(password)
-    probs = {char: count / length for char, count in freq.items()}
-    entropy = -sum(prob * math.log2(prob) for prob in probs.values())
-    print(entropy)
+SUBROUTINE Update_Password(email, new_info, type)
+    IF Manager THEN
+        IF type = "password" THEN
+            If (PasswordKey is downloaded) THEN
+                Encrypt new_info using PasswordKey
+                Send new_info to Server
+            ELSE 
+                Download PasswordKey
+                Update_Password(email, new_info, type)
+            ENDIF
+        ELIF type in ["URL", "Username", "Title", "AdditionalInfo"] THEN
+            Send new_info to Server
+        ENDIF
+    ENDIF

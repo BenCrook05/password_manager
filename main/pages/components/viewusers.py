@@ -1,6 +1,7 @@
 from flet import *
 from assets.colours import Colours
 from pages.components.pro_ring import ProRing
+from pages.components.inputs import Input
 import sqlite3
 import socket
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
@@ -41,6 +42,29 @@ class ViewUsers(UserControl):
             else:
                 self.__new_manager_text_field.error_text = data[0].upper() + data[1:].lower()
                 self.__new_manager_text_field.update()
+            self.__processing = False
+            
+    def __remove_user(self,e):
+        user_email = self.__remove_user_text_field.value
+        if user_email == "":
+            return
+        if not self.__processing:
+            self.__processing = True
+            self.__stack.controls.append(ProRing())
+            self.__stack.update()
+            data = self.__homepage.get_manager().remove_password_user(self.__passID,user_email)
+            if data == "REMOVED USER":
+                self.__homepage.get_page().snack_bar = SnackBar(
+                    content=Text("User removed",color=TEXT_COLOUR),
+                    bgcolor=BACKGROUND_COLOUR_2,
+                    elevation=5,
+                    margin=5,
+                    duration=3000,
+                )
+                self.__homepage.get_page().snack_bar.open = True
+                self.__homepage.get_page().update()
+            self.__stack.controls.pop()
+            self.__stack.update()
             self.__processing = False
 
     def build(self):
@@ -90,10 +114,16 @@ class ViewUsers(UserControl):
             users
         ))
         self.__users_container.content.controls.extend(texts)
-        self.__new_manager_text_field = TextField(
-            label="New manager email",
+        
+        self.__new_manager_text_field = Input(
+            icon_name=icons.EMAIL,
+            hint="New manager email",
         )
-
+        self.__remove_user_text_field = Input(
+            icon_name=icons.EMAIL,
+            hint="Remove user email",
+        )
+        
         self.__img = Icon(icons.PEOPLE_ALT, color=TEXT_COLOUR, size=50)
         self.__col = Column(
             controls=[
@@ -120,6 +150,16 @@ class ViewUsers(UserControl):
                 Text("Managers", size=16, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                 self.__managers_container,
                 Divider(height=10,color="transparent"),
+                Row(
+                    controls=[
+                        self.__remove_user_text_field,
+                        ElevatedButton(
+                            on_click = self.__remove_user,
+                            icon=icons.ADD_ROUNDED,
+                            text="Remove user",
+                        )
+                    ]
+                ),
                 Text("All Users", size=16, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                 self.__users_container,
             ],
