@@ -6,7 +6,7 @@ import socket
 
 class Colours:
     def __init__(self):
-        db = sqlite3.connect(rf"assets\colourdeck{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"assets\colourdeck.db")
         curs = db.cursor()
         #create the database if it doesn't exist
         #default is light mode
@@ -51,7 +51,7 @@ class Colours:
         return self.thememode
     
     def set_light_mode(self):
-        db = sqlite3.connect(rf"assets\colourdeck{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"assets\colourdeck.db")
         curs = db.cursor()
         curs.execute("CREATE TABLE IF NOT EXISTS Colours(ColoursID VARCHAR(8) primary key, ColourHex VARCHAR(32))")
         curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR', '#FFFFFF')")
@@ -65,7 +65,7 @@ class Colours:
 
         
     def set_dark_mode(self):
-        db = sqlite3.connect(rf"assets\colourdeck{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"assets\colourdeck.db")
         curs = db.cursor()
         curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR', '#2C3A4A')")
         curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('THEME_COLOUR', '#E74C3C')")

@@ -58,7 +58,7 @@ class PasswordCard(UserControl):
         except Exception as e:
             #not stored in local dictionary
             try:  # then tries to get icon data from file
-                db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+                db = sqlite3.connect(rf"assets\assetdata.db")
                 curs = db.cursor()
                 curs.execute(f"SELECT Icon FROM Icons where URL='{self.__url}'")
                 image_content = curs.fetchone()[0]
@@ -74,7 +74,7 @@ class PasswordCard(UserControl):
                     favicon_content = base64.b64encode(favicon_content).decode("utf-8")
                     self.__img = Image(src_base64=favicon_content, height=32, width=32)
                     
-                    db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+                    db = sqlite3.connect(rf"assets\assetdata.db")
                     curs = db.cursor()
                     curs.execute('CREATE TABLE IF NOT EXISTS Icons(URL VARCHAR(128) primary key, Icon VARCHAR(8192))')
                     curs.execute(f'INSERT INTO Icons VALUES("{self.__url}","{favicon_content}")')

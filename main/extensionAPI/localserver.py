@@ -17,7 +17,7 @@ def fix_padding(encoded_data):
 def get_private_data(content):
     # url = content["url"]
     code = content["extensioncode"]
-    db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+    db = sqlite3.connect(rf"extensionAPI\infoapi.db")
     curs = db.cursor()
     curs.execute("SELECT SessionKey, ClientPermanentKey, ClientEmail FROM Keys")
     data = curs.fetchone()
@@ -40,7 +40,7 @@ def get_private_data(content):
 def get_password(content):
     try:
         session_key, client_permanent_key, client_email = get_private_data(content)
-        db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
         curs = db.cursor()
         curs.execute(f"SELECT PassID, URL, Username FROM UrlPassID")
         data = curs.fetchall()

@@ -15,7 +15,7 @@ class Navbar(UserControl):
     def __close(self, e):
         # self.__page.window_visible = False
         # self.__page.update()
-        db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
         curs = db.cursor()
         curs.execute("DELETE FROM Keys")
         curs.execute("DELETE FROM UrlPassID")

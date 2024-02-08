@@ -216,7 +216,7 @@ class PasswordViewer(Viewer):
         )
         #image stored in data is already used. Since this is only requesting one image it is quick enough to load from the db
         try:
-            db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+            db = sqlite3.connect(rf"assets\assetdata.db")
             curs = db.cursor()
             curs.execute(f"SELECT Icon FROM Icons where URL='{self.__url}'")
             image_content = curs.fetchone()[0]

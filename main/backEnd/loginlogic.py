@@ -20,7 +20,7 @@ class Application:
     
     def attempt_get_saved_data(self):
         try:
-            db=sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+            db=sqlite3.connect(rf"assets\assetdata.db")
             curs = db.cursor()
             curs.execute("SELECT * FROM CurrentUser")  #will fail if no current user or if table doesn't exist
             data = curs.fetchone()
@@ -44,7 +44,7 @@ class Application:
     
     
     def save_login_data(self,email,password):
-        db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         fernet_key = Generate().generate_fernet()
         encrypted_email = fernet_key.encrypt(email.encode("utf-8"))
@@ -60,7 +60,7 @@ class Application:
 
         
     def delete_saved_login_data(self):
-        db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         curs.execute("DELETE FROM CurrentUser")
         curs.close()

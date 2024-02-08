@@ -7,7 +7,7 @@ import socket
 
 
 class Input(UserControl):
-    def __init__(self, icon_name, hint, hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32):
+    def __init__(self, icon_name, hint, hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32,width=300):
         super().__init__()
         self._icon_name = icon_name
         self._hint = hint
@@ -16,8 +16,8 @@ class Input(UserControl):
         self._focus = focus
         self._reveal_button = reveal_option
         self._max_length = max_length
+        self._width = width
         
-    
     
     def set_error_text(self, text):
         self._textfield.error_text = text
@@ -123,7 +123,7 @@ class Input(UserControl):
             border_color = 'transparent',
             bgcolor = 'transparent',
             height = 30,
-            width = 300,
+            width = self._width,
             text_size = 12,
             content_padding = 5,
             cursor_color = TEXT_COLOUR,

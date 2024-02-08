@@ -55,7 +55,7 @@ class Manager():
         return e, d, n
     
     def save_initial_data(self,code,session_key,client_permanent_key):
-        db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
         curs = db.cursor()
         curs.execute("CREATE TABLE IF NOT EXISTS Keys (SessionKey VARCHAR(256), ClientPermanentKey VARCHAR(256), ClientEmail VARCHAR(128))")
         fernet_key = Generate.generate_fernet(extra=code)
@@ -70,7 +70,7 @@ class Manager():
             
                     
     def clear_api_db(self):
-        db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
         curs = db.cursor()
         curs.execute("DELETE FROM Keys")
         curs.execute("DELETE FROM UrlPassID")
@@ -90,7 +90,7 @@ class Manager():
             try:
                 code = self.__datastore.get_data("extensioncode")
                 
-                db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+                db = sqlite3.connect(rf"extensionAPI\infoapi.db")
                 curs = db.cursor()
                 curs.execute("CREATE TABLE IF NOT EXISTS Keys (SessionKey VARCHAR(256), ClientPermanentKey VARCHAR(256), ClientEmail VARCHAR(128))")
                 
@@ -227,7 +227,7 @@ class Manager():
             else:
                 self.__passwords.append(Pw.Password(passID, title, url, username, manager))
                 
-        db = sqlite3.connect(rf"extensionAPI\infoapi{socket.gethostname()}.db")
+        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
         curs = db.cursor()
         curs.execute("CREATE TABLE IF NOT EXISTS UrlPassID (URL VARCHAR(128), PassID VARCHAR(128), Username VARCHAR(128))")
         curs.execute("DELETE FROM UrlPassID")
@@ -381,7 +381,7 @@ class Manager():
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.set_to_lockdown(passID,iterations=1)
                 if data == "SET TO LOCKDOWN":
-                    db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db") #stores locked down passwords locally so can only unlock on same device
+                    db = sqlite3.connect(rf"assets\assetdata.db") #stores locked down passwords locally so can only unlock on same device
                     curs = db.cursor()
                     curs.execute("CREATE TABLE IF NOT EXISTS Lockdown(PassID VARCHAR(64) primary key)")
                     curs.execute(f"INSERT INTO Lockdown VALUES('{passID}')") # passID is unique, so will unlock all passwords locked on this device
@@ -427,7 +427,7 @@ class Manager():
         else:
             try:
                 success = "True"
-                db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+                db = sqlite3.connect(rf"assets\assetdata.db")
                 curs = db.cursor()
                 curs.execute("SELECT * FROM Lockdown")
                 locked_passwords = curs.fetchall()

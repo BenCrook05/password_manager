@@ -137,7 +137,7 @@ class Updater(UserControl):
             self.__additional_info_input_field = None
             
         try:
-            db = sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+            db = sqlite3.connect(rf"assets\assetdata.db")
             curs = db.cursor()
             curs.execute(f"SELECT Icon FROM Icons where URL='{self.__url}'")
             image_content = curs.fetchone()[0]

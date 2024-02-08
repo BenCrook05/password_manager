@@ -118,10 +118,12 @@ class ViewUsers(UserControl):
         self.__new_manager_text_field = Input(
             icon_name=icons.EMAIL,
             hint="New manager email",
+            width=200,
         )
         self.__remove_user_text_field = Input(
             icon_name=icons.EMAIL,
             hint="Remove user email",
+            width=200,
         )
         
         self.__img = Icon(icons.PEOPLE_ALT, color=TEXT_COLOUR, size=50)
@@ -145,7 +147,9 @@ class ViewUsers(UserControl):
                             icon=icons.ADD_ROUNDED,
                             text="Add manager",
                         )
-                    ]
+                    ],
+                    alignment=MainAxisAlignment.CENTER,
+                    spacing=20,
                 ),
                 Text("Managers", size=16, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                 self.__managers_container,
@@ -158,7 +162,9 @@ class ViewUsers(UserControl):
                             icon=icons.ADD_ROUNDED,
                             text="Remove user",
                         )
-                    ]
+                    ],
+                    alignment=MainAxisAlignment.CENTER,
+                    spacing=20,
                 ),
                 Text("All Users", size=16, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                 self.__users_container,

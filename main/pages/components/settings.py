@@ -190,8 +190,8 @@ class Settings(UserControl):
                             self.__thememode_switch,
                             Text("Resart app for changes to apply", size=12, font_family="Afacad", color=TEXT_COLOUR),
                             Divider(height=20,color="transparent"),
-                            Checkbox(label="Unlock any passwords you set to lockdown?", value=False)
-                            Checkbox(label="Unlock all passwords that you manage?", value=False)
+                            Checkbox(label="Unlock any passwords you set to lockdown?", value=False),
+                            Checkbox(label="Unlock all passwords that you manage?", value=False),
                             self.__lockdown_switch,
                             Divider(height=20,color="transparent"),
                             Text("Update password", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),

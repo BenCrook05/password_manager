@@ -156,7 +156,7 @@ class Home(UserControl):
         while self.__unable_to_logout:
             pass
         self.__data.empty()
-        db=sqlite3.connect(rf"assets\assetdata{socket.gethostname()}.db")
+        db=sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         curs.execute("DELETE FROM CurrentUser")
         curs.close()
