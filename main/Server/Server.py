@@ -1230,6 +1230,7 @@ def insert_pending_keys(data):
                 curs.execute(f"SELECT Manager FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
                 manager = curs.fetchone()[0]
                 curs.execute(f"INSERT INTO PasswordKeys(PassID, UserID, PasswordKey, Manager) VALUES ('{passID}','{temp_UserID}','{password_key}','{manager}')")
+                curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
                 curs.close()
                 db.commit()
                 db.close()
