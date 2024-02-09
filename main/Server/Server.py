@@ -339,7 +339,7 @@ def create_new_user(data):
         for email in emails:
             if client_email == email[0]:
                 return "EMAIL ALREADY USED"
-        query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         values = (forename, names, client_email, password_hash, date_of_birth, phone_number, country, date.today(), permanent_public_key)
         curs.execute(query, values)
         curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
@@ -468,7 +468,7 @@ def authenticate_password(data):
     try:
         db = connect_to_db()
         curs = db.cursor()
-        query = "SELECT UserID FROM Users WHERE Email = %s"
+        query = "SELECT UserID FROM Users WHERE Email = ?"
         curs.execute(query, (client_email,))
         temp_UserID = curs.fetchone()[0]
         curs.execute(f"SELECT PasswordHash FROM Users WHERE UserID='{temp_UserID}'")
@@ -700,20 +700,6 @@ def get_all_passwords(data):
         return authenticated
 
 def set_to_lockdown(data):
-    """
-    Sets a password to lockdown mode.
-
-    Parameters:
-    - data (dict): A dictionary containing the following keys:
-        - session_key (str): The session key for authentication.
-        - client_email (str): The email of the client.
-        - passID (str): The ID of the password to set to lockdown mode.
-
-    Returns:
-    - str: "SET TO LOCKDOWN" if the password was successfully set to lockdown mode.
-    - list: ["FAILED", traceback] if an error occurred during the process.
-    - bool: False if the session key is not authenticated.
-    """
     session_key=data["session_key"]
     client_email=data["client_email"]
     temp_PassID=data["passID"]
@@ -742,20 +728,6 @@ def set_to_lockdown(data):
         return authenticated
 
 def remove_lockdown(data):
-    """
-    Removes the lockdown status of a password or all passwords associated with a user.
-
-    Args:
-        data (dict): A dictionary containing the following keys:
-            - session_key (str): The session key for authentication.
-            - client_email (str): The email of the client.
-            - passID (str): The ID of the password to remove lockdown from. Use "all" to remove lockdown from all passwords.
-
-    Returns:
-        str: If the lockdown is successfully removed, returns "REMOVED LOCKDOWN".
-        list: If an error occurs, returns ["FAILED", traceback].
-
-    """
     session_key=data["session_key"]
     client_email=data["client_email"]
     temp_PassID=data["passID"]
@@ -816,7 +788,7 @@ def add_new_password(data):
                     curs.close()
                     db.close()
                     return "PASSWORD ALREADY EXISTS"
-            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (%s, %s, %s, %s, %s)"  #avoid sql injection
+            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (?, ?, ?, ?, ?)"  #avoid sql injection
             values = (password, url, title, username, additional_info)
             curs.execute(query, values)
             temp_PassID = curs.lastrowid
@@ -873,7 +845,7 @@ def add_manager(data):
                 return "NOT MANAGER"
             db = connect_to_db()
             curs = db.cursor()
-            query = "SELECT UserID FROM Users WHERE Email = %s"
+            query = "SELECT UserID FROM Users WHERE Email = ?"
             curs.execute(query, (new_manager_email,))
             try:
                 manager_UserID = curs.fetchone()[0]
@@ -907,7 +879,9 @@ def get_manager_password_info(client_email, temp_PassID):
     try:
         db = connect_to_db()
         curs = db.cursor()
-        curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
+        query = (f"SELECT UserID FROM Users WHERE Email='?'")
+        values = (client_email,)
+        curs.execute(query, values)
         temp_UserID = curs.fetchone()[0]
         curs.execute(f"SELECT Manager FROM PasswordKeys WHERE PassID='{temp_PassID}' AND UserID='{temp_UserID}'")
         manager = curs.fetchone()[0]
@@ -1056,7 +1030,7 @@ def update_password(data):
                 return "NOT MANAGER"
             db = connect_to_db()
             curs = db.cursor()
-            query = f"UPDATE Passwords SET {type} = %s WHERE PassID = %s"
+            query = f"UPDATE Passwords SET {type} = ? WHERE PassID = ?"
             curs.execute(query, (new_info, temp_PassID))
             curs.close()
             db.commit()
@@ -1084,22 +1058,25 @@ def get_pending_passwordkeys(data):
                 return "NO PENDING PASSWORDS"
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            curs.execute(f"SELECT PasswordKey, PassID, Manager, SenderUserID, SymmetricKey FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+            curs.execute(f"SELECT PasswordKey, PassID, Manager, SenderUserID, SymmetricKey, InputTime FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
             shared_info = curs.fetchall()
             info_to_return = []
             for info in shared_info:
-                password_key, passID, manager, sender_UserID, symmetric_key = info
-                password_key = password_key.decode('utf-8')
-                password_key = password_key.replace("\\", r"\\")
-                # gets additional information to accompany encrypted password info
-                curs.execute(f"SELECT Email, Forename, Names FROM Users WHERE UserID='{sender_UserID}'")
-                sharer_info = curs.fetchone()
-                sender_email, sender_forename, sender_names = sharer_info
-                curs.execute(f"SELECT Title FROM Passwords WHERE PassID='{passID}'")
-                title = curs.fetchone()[0]
-                info_to_return.append([passID, title, password_key, manager, sender_email, sender_forename, sender_names, symmetric_key])
-            # curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
-            # curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+                password_key, passID, manager, sender_UserID, symmetric_key, info_time = info
+                now_time = datetime.now()
+                if now_time.month == info_time.month and now_time.year == info_time.year:
+                    password_key = password_key.decode('utf-8')
+                    password_key = password_key.replace("\\", r"\\")
+                    # gets additional information to accompany encrypted password info
+                    curs.execute(f"SELECT Email, Forename, Names FROM Users WHERE UserID='{sender_UserID}'")
+                    sharer_info = curs.fetchone()
+                    sender_email, sender_forename, sender_names = sharer_info
+                    curs.execute(f"SELECT Title FROM Passwords WHERE PassID='{passID}'")
+                    title = curs.fetchone()[0]
+                    info_to_return.append([passID, title, password_key, manager, sender_email, sender_forename, sender_names, symmetric_key])
+                else:
+                    # if the pending password is over a month old, delete it
+                    curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
             curs.close()
             db.commit()
             db.close()
@@ -1119,7 +1096,7 @@ def get_emails_sharing(data):
         try:
             db = connect_to_db()
             curs = db.cursor()
-            query = "SELECT UserID, Forename, Names, Email FROM Users WHERE Email = %s"
+            query = "SELECT UserID, Forename, Names, Email FROM Users WHERE Email = ?"
             curs.execute(query, (email,))
             try:
                 user_info = curs.fetchone()
@@ -1187,13 +1164,13 @@ def share_password(data):
                 password_key = password_key.encode('utf-8')
                 query = """
                     INSERT INTO PendingPasswords (
-                        PasswordKey, PassID, Manager, SenderUserID, RecipientUserID, SymmetricKey
+                        PasswordKey, PassID, Manager, SenderUserID, RecipientUserID, SymmetricKey, InsertTime
                     ) VALUES (
-                        %s, %s, %s, %s, %s, %s
+                        ?, ?, ?, ?, ?, ?, ?
                     )
                 """
                 values = (
-                    password_key, passID, manager, sender_UserID, recipient_UserID, encrypted_symmetric_key
+                    password_key, passID, manager, sender_UserID, recipient_UserID, encrypted_symmetric_key, datetime.now()
                 )
                 curs.execute(query, values)
                 curs.execute(f"UPDATE Users SET PendingDownload=1 WHERE UserID='{recipient_UserID}'")
