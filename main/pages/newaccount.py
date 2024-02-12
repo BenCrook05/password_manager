@@ -44,12 +44,12 @@ class Newaccount(UserControl):
                 
                 self.__stack.controls.append(ProRing())
                 self.__stack.update()
-                data = Application().create_new_account(self.__first_name,self.__last_name,self.__email,password,self.__date_of_birth,self.__phone_number,self.__country,self.__data)
+                data = Application.create_new_account(self.__first_name,self.__last_name,self.__email,password,self.__date_of_birth,self.__phone_number,self.__country,self.__data)
                 if data == "CODE SENT":
                     self.__data.add_data("email",self.__email)
                     self.__data.add_data("password",password)
                     self.__stack.controls.clear()
-                    self.__stack.controls.append(Receivecode(self.__page,self.__data,Application(),self.__email,"account"))
+                    self.__stack.controls.append(Receivecode(self.__page,self.__data,self.__email,"account"))
                     self.__stack.update()
                 elif data == "EMAIL ALREADY USED":
                     self.__page.snack_bar = SnackBar(

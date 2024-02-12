@@ -83,8 +83,7 @@ class Encryption:
         curs.close()
         db.commit()
         db.close()
-        # with open("/home/BenCrook/mysite/key.txt","w") as file:
-        #     file.write(f"{ciphertext_private_key_str}\n{ciphertext_public_key_str}\n{ciphertext_public_n_str}\n{date.today()}")
+
 
     @staticmethod
     def get_cipher_suite(include_day = False):
@@ -110,8 +109,7 @@ class Encryption:
 
     @staticmethod
     def get_server_key(key = 1):  #1 for public, 0 for private -(corresponds to index)
-        # with open("/home/BenCrook/mysite/key.txt","r") as file:
-        #     data = file.read()
+
         try:
             db = connect_to_db()
             curs = db.cursor()
@@ -240,8 +238,13 @@ def connect_to_db():
         return "FAILED TO CONNECT"
 
 def write_errors(error_code="None",function_name="None"):
-    with open("/home/BenCrook/mysite/error.txt", "a") as file:
+    existing_content = ""
+    with open("/home/BenCrook/mysite/error.txt", "r") as file:
+        existing_content = file.read()
+    with open("/home/BenCrook/mysite/error.txt", "w") as file:
         file.write(f"\n\nFunction attempt: {function_name}\nError code: {str(error_code)}\nTime: {datetime.now().replace(second=0, microsecond=0)}")
+        file.write(existing_content)
+
 
 def send_email(subject, content, recipient_address):
     try:
@@ -561,7 +564,7 @@ def get_password_overview(data):
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
             curs.execute(f"""
-                SELECT URL, Title, Username, Passwords.PassID, Manager
+                SELECT URL, Title, Username, Passwords.PassID, Manager, PasswordKey, AdditionalInfo, Password
                 FROM Passwords
                 JOIN PasswordKeys ON PasswordKeys.PassID = Passwords.PassID
                 WHERE PasswordKeys.UserID = '{temp_UserID}' AND Lockdown = 0
@@ -571,8 +574,13 @@ def get_password_overview(data):
             curs.close()
             db.close()
             for db_password in temp_passwords:
-                URL, Title, Username, PassID, Manager = db_password
-                passwords.append([URL, Title, Username, PassID, Manager])
+                URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password = db_password 
+                data["passID"] = PassID  #add passID to data to request managers and users
+                users_list = get_password_users(data)
+                data["manager_only"] = True
+                managers_list = get_password_users(data)
+                passwords.append([URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list])
+                data["manager_only"] = False
             return passwords
         except Exception as e:
             write_errors(traceback.format_exc(),"Getting password overview")
@@ -946,7 +954,7 @@ def get_password_users(data):
             if manager_only:  # only returns the users who are managers
                 curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=1")
             else:  # returns all users
-                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}'")
+                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=0")
             all_users = curs.fetchall()
             user_info = []
             for info in all_users:
@@ -1025,7 +1033,7 @@ def update_password(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
+            manager = get_manager_password_info(client_email,temp_PassID)[1]
             if manager == 0:
                 return "NOT MANAGER"
             db = connect_to_db()

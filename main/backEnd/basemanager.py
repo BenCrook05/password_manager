@@ -23,7 +23,7 @@ class Manager():
         self.__userID = None
         self.__passwords = []
         self.__pending_passwords = [] #passwords awaiting approval from user
-        self.__scanned_passwords = None
+        self.__scanned_passwords = []
         self.__client_permanent_key = self.__get_client_permanent_key()
         if session_key and server_public_key: #reduces number of requests to server
             self.__session_key = session_key
@@ -111,8 +111,6 @@ class Manager():
         else:
             return "UNAUTHENTICATED"
         
-    def reset_client_password(self, new_password):
-        passwords = self.export_all()
 
     def __reset_client_sharing_keys(self):
         e, d, n = self.__get_client_sharing_keys()
@@ -218,27 +216,38 @@ class Manager():
                 return self.import_passwords(iterations=1) #returns so anything below this doesn't run
         elif password_data == "ERROR":
             return password_data
+        success = True
+        error = ""
         for single_password in password_data:
-            # print(single_password)
-            url, title, username, passID, manager = single_password
-            if url == "": #if no url therefore not a login password
-                self.__passwords.append(Pw.Info(passID, title, manager))
-            else:
-                self.__passwords.append(Pw.Password(passID, title, url, username, manager))
-                
-        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
-        curs = db.cursor()
-        curs.execute("CREATE TABLE IF NOT EXISTS UrlPassID (URL VARCHAR(128), PassID VARCHAR(128), Username VARCHAR(128))")
-        curs.execute("DELETE FROM UrlPassID")
-        print("created UrlPassID table")
-        for password in self.__passwords:
-            if type(password) == Pw.Password:
-                curs.execute(f"INSERT INTO UrlPassID (URL, PassID, Username) VALUES ('{password.get_url()}','{password.get_passID()}','{password.get_username()}')")
-        curs.close()
-        db.commit()
-        db.close()
-        end_time = datetime.now()
-        print(f"Time taken to download password overviews: {end_time-start_time}")
+            try:
+                URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list = single_password
+                decrypted_password_key = Decrypt.decrypt_password_key(PasswordKey, self.__client_permanent_key)
+                decrypted_password = Decrypt.decrypt_password(Password, decrypted_password_key)
+                if URL == "": #if no url therefore info not password (only way to distinquish)
+                    self.__passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
+                else:
+                    self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
+            except Exception as e:
+                success = False
+                error = e
+        if not success:
+            return f"ERROR: {e}"      
+        else:
+            db = sqlite3.connect(rf"extensionAPI\infoapi.db")
+            curs = db.cursor()
+            curs.execute("CREATE TABLE IF NOT EXISTS UrlPassID (URL VARCHAR(128), PassID VARCHAR(128), Username VARCHAR(128))")
+            curs.execute("DELETE FROM UrlPassID")
+            print("created UrlPassID table")
+            for password in self.__passwords:
+                if type(password) == Pw.Password:
+                    curs.execute(f"INSERT INTO UrlPassID (URL, PassID, Username) VALUES ('{password.get_url()}','{password.get_passID()}','{password.get_username()}')")
+            curs.close()
+            db.commit()
+            db.close()
+            end_time = datetime.now()
+            print(f"Time taken to download password overviews: {end_time-start_time}")
+            return "SUCCESS"
+        
         
     def get_passwords(self):
         data_to_return = []

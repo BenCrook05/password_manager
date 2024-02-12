@@ -530,7 +530,7 @@ class PyAnyWhereRequests:
         
         
     @staticmethod
-    def send_request(request_header, data=[], client_public_key=[], encrypted_symmetric_key=""):
+    def send_request(request_header, data={}, client_public_key=[], encrypted_symmetric_key=""):
         url = "https://BenCrook.eu.pythonanywhere.com/post_endpoint"
         dic_to_send = {
             "request_header": request_header,

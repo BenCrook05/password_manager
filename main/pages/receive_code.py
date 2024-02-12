@@ -1,16 +1,16 @@
 from flet import *
 from backEnd.loginlogic import Application
 from pages.components.pro_ring import ProRing
+import re
 from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
 class Receivecode(UserControl):
-    def __init__(self,page,data,application,email,type):
+    def __init__(self,page,data,email,type):
         super().__init__()
         self.__page = page
         self.__data = data
         self.__processing = False
-        self.__application = application
         self.__email = email
         if type == "account":
             self.__function = self.__attempt_verify_account
@@ -20,7 +20,7 @@ class Receivecode(UserControl):
     def __check_data(self, e):
         values = self.__code_input.value
         for value in values:
-            if value not in ["0","1","2","3","4","5","6","7","8","9"] and value != "":
+            if re.match(r'^[0-9]+$', value):
                 self.__code_input.value = self.__code_input.value.replace(value,"")
                 self.__code_input.update()
         
@@ -31,7 +31,7 @@ class Receivecode(UserControl):
             self.__container_info.update()
             self.__stack.update()
             
-            data = self.__application.validate_new_account(self.__email, self.__code_input.value, self.__data)
+            data = Application.validate_new_account(self.__email, self.__code_input.value, self.__data)
             print(data)
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                 self.__page.go('/Home')
@@ -46,21 +46,6 @@ class Receivecode(UserControl):
                 self.__page.snack_bar.open = True
                 self.__data.empty()
                 self.__page.go('/')
-                # self.__dlg = AlertDialog(
-                #     shape=StadiumBorder,
-                #     modal = True,
-                #     content=Text("Incorrect Code",size=15),
-                #     actions=[
-                #         TextButton("Return to Login", on_click=lambda _: self.__page.go('/')),
-                #     ],
-                #     actions_alignment=MainAxisAlignment.CENTER,
-                #     actions_padding=5,
-                # )
-                # self.__stack.controls.pop()
-                # self.__stack.update()
-                # self.__page.dialog = self.__dlg
-                # self.__dlg.open = True
-                # self.__page.update()
                 
         
     def __attempt_add_device(self,e):
@@ -69,7 +54,7 @@ class Receivecode(UserControl):
             self.__container_info.update()
             self.__stack.update()
             
-            data = self.__application.login_new_device_confirm(self.__email, self.__code_input.value, self.__data)
+            data = Application.login_new_device_confirm(self.__email, self.__code_input.value, self.__data)
             print(data)
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS","INCORRECT CODE"]:
                 self.__page.go('/Home')
@@ -84,22 +69,7 @@ class Receivecode(UserControl):
                 self.__page.snack_bar.open = True
                 self.__data.empty()
                 self.__page.go('/')
-                # self.__dlg = AlertDialog(
-                #     shape=StadiumBorder,
-                #     modal = True,
-                #     content=Text("Incorrect Code",size=15),
-                #     actions=[
-                #         TextButton("Return to Login", on_click=lambda _: self.__page.go('/')),
-                #     ],
-                #     actions_alignment=MainAxisAlignment.CENTER,
-                #     actions_padding=5,
-                # )
-                # self.__stack.controls.pop()
-                # self.__stack.update()
-                # self.__page.dialog = self.__dlg
-                # self.__dlg.open = True
-                # self.__dlg.update()
-                # self.__page.update()
+
     
     def __return_to_login(self,e):
         self.__page.go('/')

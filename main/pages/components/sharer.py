@@ -44,7 +44,7 @@ class Sharer(UserControl):
                     print(data)
                     self.__recipient_userID, self.__recipient_forename, self.__recipient_name, self.__recipient_email = data
                     self.__col.controls = self.__col.controls[:4]  #remove unwanted controls from the column keeping the image and buttons
-                    self.__confirm_button = ElevatedButton("Confirm", on_click=self.__confirm)
+                    self.__confirm_button = ElevatedButton("Confirm", on_click=self.__confirm_access_rights)
                     self.__return_button = ElevatedButton("Return", on_click=self.__back)
                     self.__forename_box = TextField(
                         label="Recipient's Forename",
@@ -102,10 +102,10 @@ class Sharer(UserControl):
                 self.__col.update()
                 self.__processing = False
           
-    def __confirm(self,e):
+    def __confirm_access_rights(self,e):
         ##check manager choice then confirm share
         self.__col.controls = self.__col.controls[:4]
-        self.__confirm_send_button = ElevatedButton("Confirm", on_click=self.__send)
+        self.__confirm_send_button = ElevatedButton("Confirm", on_click=self.__confirm_to_send)
         self.__manager_checkbox = Checkbox(value=False)
         self.__col.controls.extend([
             Divider(height=40,color="transparent"),
@@ -135,7 +135,7 @@ class Sharer(UserControl):
         self.__col.update()
           
             
-    def __send(self,e):
+    def __confirm_to_send(self,e):
         self.__final_confirm_button = ElevatedButton("Confirm", on_click=self.__final_send_password)
         self.__recipient_is_manager = 1 if self.__manager_checkbox.value else 0
         self.__col.controls = self.__col.controls[:4]
@@ -161,21 +161,6 @@ class Sharer(UserControl):
             )
             ])
         self.__col.update()
-        # self.__alert = AlertDialog(
-        #     shape=StadiumBorder,
-        #     modal=True,
-        #     title="Confirm Share",
-        #     content=f"Are you sure you want to share this password with {self.__recipient_forename}, {self.__recipient_name}?",
-        #     actions=[
-        #         ElevatedButton("Cancel", on_click=self.__back),
-        #         ElevatedButton("Confirm", on_click=self.__final_send_password),
-        #     ],
-        #     actions_alignment=MainAxisAlignment.CENTER,
-        #     actions_padding=5,
-        # )
-        # self.__page.dialog = self.__alert
-        # self.__alert.open = True
-        # self.__page.update()
         
         
     def __final_send_password(self, e):

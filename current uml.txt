@@ -1,0 +1,43 @@
+----------------------------------
+           Input                
+----------------------------------
+- icon_name: str               
+- hint: str                    
+- hide: bool                   
+- on_press_function: function  
+- focus: bool                  
+- reveal_option: bool          
+- max_length: int              
+- width: int                   
+----------------------------------
++ __init__(icon_name: str, hint: str, hide: bool=False, on_press_function: function=None, focus: bool=False, reveal_option: bool=False, max_length: int=32, width: int=300): void 
++ set_error_text(text: str): void 
++ update(): void               
++ set_value(value: Any): void 
++ get_value(): Any             
++ on_submit(): void            
++ change_disabled(): void     
+# check_length(e: Event): void 
+- validate_date(e: Event): void 
+- create_date_error(): void 
+# clear_field(): void        
++ show_input(): void           
++ hide_input(): void           
+# change_height(new_height: int): void 
+# reset_height(): void        
++ build(): Container           
+----------------------------------
+
+----------------------------------
+         CountryInput           
+----------------------------------
+ No attributes                  
+----------------------------------
++ __init__(): void             
++ set_error_text(text: str): void 
++ get_value(): Any             
++ update(): void               
++ change_disabled(): void     
+- get_location(): str        
++ build(): Container           
+----------------------------------

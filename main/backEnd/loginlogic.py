@@ -11,14 +11,16 @@ from backEnd.encryption import Generate
 import socket
 import traceback
 
-class Application:
-    def __get_server_key(self):
+class Application:     
+    @staticmethod
+    def __get_server_key():
         server_public_key = pr.get_server_key()
         map(int, server_public_key)
         print(server_public_key)
         return server_public_key
     
-    def attempt_get_saved_data(self):
+    @staticmethod
+    def attempt_get_saved_data():
         try:
             db=sqlite3.connect(rf"assets\assetdata.db")
             curs = db.cursor()
@@ -42,8 +44,8 @@ class Application:
             return False
 
     
-    
-    def save_login_data(self,email,password):
+    @staticmethod
+    def save_login_data(email,password):
         db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         fernet_key = Generate().generate_fernet()
@@ -58,8 +60,8 @@ class Application:
         db.commit()
         db.close()
 
-        
-    def delete_saved_login_data(self):
+    @staticmethod
+    def delete_saved_login_data():
         db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         curs.execute("DELETE FROM CurrentUser")
@@ -67,8 +69,9 @@ class Application:
         db.commit()
         db.close()
         
-    def login(self,email,password,datadic):
-        server_public_key = self.__get_server_key()
+    @staticmethod
+    def login(email,password,datadic):
+        server_public_key = Application.__get_server_key()
         datadic.add_data("server_public_key",server_public_key)
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
@@ -78,34 +81,33 @@ class Application:
         data = pr.authenticate_password(server_public_key,email,mac_address_hash,comparitive_password_hash)
         print(data)
         return data
-        
-    def get_user(self):
-        return self.__current_user
     
-    def login_new_device_request(self,email,password,datadic):
-        server_public_key = self.__get_server_key()
+    @staticmethod
+    def login_new_device_request(email,password,datadic):
+        server_public_key = Application.__get_server_key()
         datadic.add_data("server_public_key",server_public_key)
-        self.__current_user = None
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
         print("application attempting to login new device")
         data = pr.add_new_device_request(server_public_key,email,mac_address_hash,comparitive_password_hash)
         return data
-        
-    def login_new_device_confirm(self,email,code, datadic):
+       
+    @staticmethod 
+    def login_new_device_confirm(email,code, datadic):
         server_public_key = datadic.get_data("server_public_key")
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         data = pr.confirm_device_code(server_public_key,email,mac_address_hash,code)
         return data
     
-    def create_new_account(self,forename,names,email,password,date_of_birth,phone_number,country,datadic):
+    @staticmethod
+    def create_new_account(forename,names,email,password,date_of_birth,phone_number,country,datadic):
         valid_email = re.search(r'\A[\d|a-z]\w*@[\d|a-z]\w*(.[a-z]{2,3}){1,2}\Z',email.lower())
         if valid_email:
             mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
             stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
             permanent_public_key = "abc"
-            server_public_key = self.__get_server_key()
+            server_public_key = Application.__get_server_key()
             datadic.add_data("server_public_key",server_public_key)
             data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
             
@@ -113,7 +115,8 @@ class Application:
         else:
             return "INVALID EMAIL"
     
-    def validate_new_account(self,email,code,datadic):
+    @staticmethod
+    def validate_new_account(email,code,datadic):
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         server_public_key = datadic.get_data("server_public_key")
         data = pr.confirm_new_user(server_public_key,email,mac_address_hash,code)

@@ -6,28 +6,36 @@ import socket
 
 class Colours:
     def __init__(self):
-        db = sqlite3.connect(rf"assets\colourdeck.db")
-        curs = db.cursor()
-        #create the database if it doesn't exist
-        #default is light mode
-        exists = curs.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='Colours'").fetchone()
-        if exists is None:
-            curs.execute("CREATE TABLE IF NOT EXISTS Colours(ColoursID VARCHAR(8) primary key, ColourHex VARCHAR(32))")
-            curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR', '#FFFFFF')")
-            curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('THEME_COLOUR', '#afe7ed')")
-            curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('TEXT_COLOUR', '#424242')")
-            curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR_2', '#FAF9F6')")
-            curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('thememode', 'LIGHT')")
-            db.commit()
-            
-        #get the colours from the database
-        self.BACKGROUND_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='BACKGROUND_COLOUR'").fetchone()[0]
-        self.THEME_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='THEME_COLOUR'").fetchone()[0]
-        self.TEXT_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='TEXT_COLOUR'").fetchone()[0]
-        self.BACKGROUND_COLOUR_2 = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='BACKGROUND_COLOUR_2'").fetchone()[0]
-        thememode = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='thememode'").fetchone()[0]
-        curs.close()
-        db.close()
+        #TODO
+        try:
+            db = sqlite3.connect(rf"assets\colourdeck.db")
+            curs = db.cursor()
+            #create the database if it doesn't exist
+            #default is light mode
+            exists = curs.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='Colours'").fetchone()
+            if exists is None:
+                curs.execute("CREATE TABLE IF NOT EXISTS Colours(ColoursID VARCHAR(8) primary key, ColourHex VARCHAR(32))")
+                curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR', '#FFFFFF')")
+                curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('THEME_COLOUR', '#afe7ed')")
+                curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('TEXT_COLOUR', '#424242')")
+                curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('BACKGROUND_COLOUR_2', '#FAF9F6')")
+                curs.execute("INSERT OR REPLACE INTO Colours (ColoursID, ColourHex) VALUES ('thememode', 'LIGHT')")
+                db.commit()
+                
+            #get the colours from the database
+            self.BACKGROUND_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='BACKGROUND_COLOUR'").fetchone()[0]
+            self.THEME_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='THEME_COLOUR'").fetchone()[0]
+            self.TEXT_COLOUR = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='TEXT_COLOUR'").fetchone()[0]
+            self.BACKGROUND_COLOUR_2 = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='BACKGROUND_COLOUR_2'").fetchone()[0]
+            thememode = curs.execute("SELECT ColourHex FROM Colours WHERE ColoursID='thememode'").fetchone()[0]
+            curs.close()
+            db.close()
+        except:
+            self.BACKGROUND_COLOUR = "#FFFFFF"
+            self.THEME_COLOUR = "#afe7ed"
+            self.TEXT_COLOUR = "#424242"
+            self.BACKGROUND_COLOUR_2 = "#FAF9F6"
+            thememode = "LIGHT"
         
         #set the thememode
         if thememode == "LIGHT":
@@ -39,7 +47,7 @@ class Colours:
         return self.BACKGROUND_COLOUR, self.THEME_COLOUR, self.TEXT_COLOUR, self.BACKGROUND_COLOUR_2
     
     def get_bg(self):
-        return self.themeColour1
+        return self.BACKGROUND_COLOUR
     
     def get_nav_bar_colour(self):
         if self.get_theme() == ThemeMode.LIGHT:

@@ -5,15 +5,15 @@ import random
 import time
 
 class PassInfo:
-    def __init__(self, passID, title, manager):
+    def __init__(self, passID, title, manager, password, password_key, password_users, password_managers):
         self._passID = passID #protected not private so can be accessed by child class
         self._title = title
-        self._password_key = None
-        self._password = None
+        self._password_key = password_key
+        self._password = password
         self._manager = manager
         self._lockdown = 0
-        self._password_users = None
-        self._password_managers = None
+        self._password_users = password_users
+        self._password_managers = password_managers
         
     def get_summary(self):
         pass
@@ -174,8 +174,8 @@ class PassInfo:
             return data
 
 class Info(PassInfo):
-    def __init__(self, passID, title, manager):
-        super().__init__(passID, title, manager)
+    def __init__(self, passID, title, manager, password, password_key, password_users, password_managers):
+        super().__init__(passID, title, manager, password, password_key, password_users, password_managers)
         
     def get_summary(self):
         if self._lockdown == 0:
@@ -206,8 +206,8 @@ class Info(PassInfo):
     
     
 class Password(PassInfo):
-    def __init__(self, passID, title, url, username, manager):
-        super().__init__(passID, title, manager)
+    def __init__(self, passID, title, url, username, manager, password, password_key, password_users, password_managers):
+        super().__init__(passID, title, manager, password, password_key, password_users, password_managers)
         self.__url = url
         self.__username = username
         self.__additional_info = None

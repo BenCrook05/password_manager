@@ -1,7 +1,7 @@
 from flet import *
 
 class ProRing(UserControl):
-    def __init__(self,width=None):
+    def __init__(self,width=0):
         super().__init__()
         self.__width = width
         
@@ -21,6 +21,6 @@ class ProRing(UserControl):
                     ]
                 )
             )
-        if self.__width != None:
+        if self.__width != 0:
             container.width=self.__width
         return container

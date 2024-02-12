@@ -16,12 +16,11 @@ class Login(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
-        self.__application = Application()
 
     def attempt_auto_login(self):
         self.__stack.controls.append(ProRing())
         self.__stack.update()
-        saved_data = self.__application.attempt_get_saved_data()
+        saved_data = Application.attempt_get_saved_data()
         try:
             if saved_data:
                 print(f"saved data: {saved_data}")
@@ -39,7 +38,7 @@ class Login(UserControl):
                 
                 self.__stack.controls.append(ProRing())
                 self.__stack.update()
-                data = self.__application.login(email, password, self.__data)
+                data = Application.login(email, password, self.__data)
                 if data in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                     raise ValueError
                 
@@ -86,7 +85,7 @@ class Login(UserControl):
             self.__stack.controls.append(ProRing())
             self.__container_info.update()
             self.__stack.update()
-            data = self.__application.login(email, password, self.__data)
+            data = Application.login(email, password, self.__data)
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                 ### successful logging in due to no error
                 #update data dictionary
@@ -96,10 +95,10 @@ class Login(UserControl):
                 self.__page.update()
                 
                 if self.__stay_signed_in.value:
-                    self.__application.save_login_data(email,password)
+                    Application.save_login_data(email,password)
                 else:
                     try:
-                        self.__application.delete_saved_login_data()
+                        Application.delete_saved_login_data()
                     except:
                         pass
                 self.__page.go('/Home')
@@ -110,7 +109,7 @@ class Login(UserControl):
                 else:
                     self.__login_success.value = "Incorrect Email or Password"
                 try:
-                    self.__application.delete_saved_login_data()
+                    Application.delete_saved_login_data()
                 except Exception as e:
                     pass
                 

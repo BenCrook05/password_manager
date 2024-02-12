@@ -49,14 +49,14 @@ class Newdevice(UserControl):
             self.__container_info.update()
             self.__stack.update()
             
-            data = Application().login_new_device_request(email, password, self.__data)
+            data = Application.login_new_device_request(email, password, self.__data)
             if data == "CODE SENT":
                 self.__data.add_data("email",email)
                 self.__data.add_data("password",password)
                 self.__stack.controls.clear()
                 self.__stack.update()
                 self.__stack.controls.append(
-                    Receivecode(self.__page,self.__data,Application(),email,"device")
+                    Receivecode(self.__page,self.__data,email,"device")
                 )
                 self.__stack.update()
                 
