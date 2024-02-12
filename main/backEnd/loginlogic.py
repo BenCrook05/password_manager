@@ -10,6 +10,7 @@ import base64
 from backEnd.encryption import Generate
 import socket
 import traceback
+from backEnd.scan import PasswordChecker
 
 class Application:     
     @staticmethod
@@ -30,7 +31,7 @@ class Application:
             db.close()
             if data is not None:
                 print("attempting auto login")
-                fernet_key = Generate().generate_fernet()
+                fernet_key = Generate.generate_fernet()
                 encrypted_email = base64.b64decode(data[0].encode("utf-8"))
                 encrypted_password = base64.b64decode(data[1].encode("utf-8"))
                 email = fernet_key.decrypt(encrypted_email).decode("utf-8")
@@ -39,6 +40,8 @@ class Application:
                 print(f"email: {email}, password: {password}, date: {data_time_last_login}")
                 if data_time_last_login > datetime.now() - timedelta(days=14):    
                     return email, password
+                else:
+                    return False
             raise ValueError("No saved data")
         except Exception as e:
             return False
@@ -48,7 +51,7 @@ class Application:
     def save_login_data(email,password):
         db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
-        fernet_key = Generate().generate_fernet()
+        fernet_key = Generate.generate_fernet()
         encrypted_email = fernet_key.encrypt(email.encode("utf-8"))
         encrypted_email_str = base64.b64encode(encrypted_email).decode('utf-8')
         encrypted_password = fernet_key.encrypt(password.encode("utf-8"))
@@ -122,8 +125,20 @@ class Application:
         data = pr.confirm_new_user(server_public_key,email,mac_address_hash,code)
         return data
         
-        
-    
+    @staticmethod
+    def check_password_is_suitable(password):
+        checker = PasswordChecker({
+            "password": password,
+            "username": "",
+            "passID": 0,
+            "url": "",
+            "title": "",
+        })
+        password_rating = checker.scan_all_passwords()["rating"]
+        if password_rating > 0.7:
+            return True
+        else:
+            return False    
     
     
     

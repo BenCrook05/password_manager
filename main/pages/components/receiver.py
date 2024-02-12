@@ -16,7 +16,7 @@ class NewPassword(UserControl):
         
     def attempt_confirm(self):
         if self.__check_box.value == True:
-            data = self.__homepage.get_manager().accept_pending_share(self.__passID, "accept")
+            data = self.__homepage.get_manager().accept_pending_share(self.__passID, "Accept")
             self.__homepage.get_page().snack_bar = SnackBar(
                 content=Text(f"Password uploaded with code: {data.lower() if data else "None"}",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
@@ -28,7 +28,7 @@ class NewPassword(UserControl):
             self.__homepage.get_manager().accept_pending_share(self.__passID, "no action") 
             
     def __delete(self,e):
-        self.__homepage.get_manager().accept_pending_share(self.__passID, "reject")
+        self.__homepage.get_manager().accept_pending_share(self.__passID, "Reject")
         self.__row.controls = []
         self.__row.update()
             
@@ -38,18 +38,26 @@ class NewPassword(UserControl):
     
     def build(self):
         self.__check_box = Checkbox(value=False)
-        self.__delete_button = IconButton(icon=icons.DELETE, on_click=self.__delete, color="red")
+        self.__delete_button = IconButton(icon=icons.DELETE, on_click=self.__delete, bgcolor="red")
         self.__row = Row(
             controls=[
                 Column(
                     controls=[
                         Text(self.__title, size=19, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
-                        Text(value=f"Sender: {self.__sender_name} {self.__sender_surname}: {self.__sender_email}", size=13, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
+                        Text(value=f"Sender: {self.__sender_name} {self.__sender_surname}: {self.__sender_email}", size=13, font_family="Afacad", color=TEXT_COLOUR),
                     ],
                     alignment=MainAxisAlignment.START,
                     horizontal_alignment=CrossAxisAlignment.START,
                 ),
-                self.__check_box,
+                Row(
+                    controls=[
+                        self.__check_box,
+                        VerticalDivider(width=15,),
+                        self.__delete_button,
+                    ],
+                    alignment=MainAxisAlignment.SPACE_BETWEEN,
+                    vertical_alignment=CrossAxisAlignment.CENTER,
+                ),
             ],
             spacing=20,
             alignment=MainAxisAlignment.SPACE_BETWEEN,
@@ -102,7 +110,7 @@ class ReceiveShared(UserControl):
         self.__back_button = IconButton(icon=icons.ARROW_BACK,on_click=self.__back)
         self.__col = Column(
             controls=[],
-            spacing=20,
+            spacing=10,
             alignment=MainAxisAlignment.START,
             horizontal_alignment=CrossAxisAlignment.CENTER,
         )
@@ -114,7 +122,7 @@ class ReceiveShared(UserControl):
         
         data = self.__homepage.get_manager().get_pending_shares()
         
-        if data == "NO PENDING PASSWORDS":
+        if data == "NO PENDING PASSWORDS" or type(data) != list:
             self.__homepage.get_page().snack_bar = SnackBar(
                 content=Text("No passwords have been shared with you",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
@@ -130,7 +138,9 @@ class ReceiveShared(UserControl):
         else:
             self.__col.controls = self.__col.controls[:4]
             self.__col.controls.extend([
+                Divider(height=3, color="transparent"),
                 Text("Select the passwords you would like to accept", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
+                Divider(height=40),
                 Row(
                     controls=[
                         VerticalDivider(color="transparent", width=1),
@@ -151,6 +161,4 @@ class ReceiveShared(UserControl):
                 Divider(height=10,color="transparent"),
                 ElevatedButton("Confirm", on_click=self.__upload)
             ])
-        self.__col.update()
-        self.__stack.update()
         return self.__stack

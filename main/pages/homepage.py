@@ -111,10 +111,7 @@ class Home(UserControl):
             thread.start()
         for thread in threads:
             thread.join()
-        self.__manager.get_all_passwords_full()
-        self.__manager.get_all_managers_users()
-        self.__manager.scan_passwords()
-        
+
     def run_background_tasks(self):
         self.__unable_to_logout = True
         self.__download_full_passwords()
@@ -534,9 +531,6 @@ class Home(UserControl):
             content=self.__initial_icon,
         )
         
-        
-        self.__initialise()            
-        
         self.__row = Row(
             controls=[
                 self.__navrail,
@@ -548,4 +542,16 @@ class Home(UserControl):
             alignment=MainAxisAlignment.START,
             vertical_alignment=CrossAxisAlignment.START,
         )
-        return self.__row
+        
+        self.__initialise()     
+               
+        self.__top_column = Column(
+            contents=[
+                self.__row
+            ],
+            spacing=0,
+            alignment=MainAxisAlignment.CENTER,
+            horizontal_alignment=CrossAxisAlignment.CENTER,
+        )
+        
+        return self.__top_column

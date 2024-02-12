@@ -41,45 +41,54 @@ class Newaccount(UserControl):
             password = self.__password_input.get_value()
             confirm_password = self.__confirm_password_input.get_value()
             if password == confirm_password:
-                
-                self.__stack.controls.append(ProRing())
-                self.__stack.update()
-                data = Application.create_new_account(self.__first_name,self.__last_name,self.__email,password,self.__date_of_birth,self.__phone_number,self.__country,self.__data)
-                if data == "CODE SENT":
-                    self.__data.add_data("email",self.__email)
-                    self.__data.add_data("password",password)
-                    self.__stack.controls.clear()
-                    self.__stack.controls.append(Receivecode(self.__page,self.__data,self.__email,"account"))
+                if Application.check_password_is_suitable(password):
+                    self.__stack.controls.append(ProRing())
                     self.__stack.update()
-                elif data == "EMAIL ALREADY USED":
-                    self.__page.snack_bar = SnackBar(
-                        content=Text("Email already linked to an account",color=TEXT_COLOUR),
-                        bgcolor=BACKGROUND_COLOUR_2,
-                        elevation=5,
-                        margin=5,
-                        duration=3000,
-                    )
-                    self.__page.snack_bar.open = True
-                    self.__data.empty()
-                    self.__page.go('/')
+                    data = Application.create_new_account(self.__first_name,self.__last_name,self.__email,password,self.__date_of_birth,self.__phone_number,self.__country,self.__data)
+                    if data == "CODE SENT":
+                        self.__data.add_data("email",self.__email)
+                        self.__data.add_data("password",password)
+                        self.__stack.controls.clear()
+                        self.__stack.controls.append(Receivecode(self.__page,self.__data,self.__email,"account"))
+                        self.__stack.update()
+                    elif data == "EMAIL ALREADY USED":
+                        self.__page.snack_bar = SnackBar(
+                            content=Text("Email already linked to an account",color=TEXT_COLOUR),
+                            bgcolor=BACKGROUND_COLOUR_2,
+                            elevation=5,
+                            margin=5,
+                            duration=3000,
+                        )
+                        self.__page.snack_bar.open = True
+                        self.__data.empty()
+                        self.__page.go('/')
 
-                    self.__stack.controls.pop()
-                    self.__stack.update()
-                    self.__page.dialog = self.__dlg
-                    self.__dlg.open = True
-                    self.__page.update()
+                        self.__stack.controls.pop()
+                        self.__stack.update()
+                        self.__page.dialog = self.__dlg
+                        self.__dlg.open = True
+                        self.__page.update()
+                    else:
+                        self.__page.snack_bar = SnackBar(
+                            content=Text("Failed to add account",color=TEXT_COLOUR),
+                            bgcolor=BACKGROUND_COLOUR_2,
+                            elevation=5,
+                            margin=5,
+                            duration=3000,
+                        )
+                        self.__page.snack_bar.open = True
+                        self.__data.empty()
+                        self.__page.go('/')
                 else:
-                    self.__page.snack_bar = SnackBar(
-                        content=Text("Failed to add account",color=TEXT_COLOUR),
-                        bgcolor=BACKGROUND_COLOUR_2,
-                        elevation=5,
-                        margin=5,
-                        duration=3000,
-                    )
-                    self.__page.snack_bar.open = True
-                    self.__data.empty()
-                    self.__page.go('/')
-
+                    self.__password_input.set_error_text("")
+                    self.__password_input.update()
+                    time.sleep(1)
+                    self.__password_input.set_error_text("Password not strong enough")
+                    self.__password_input.set_value("")
+                    self.__confirm_password_input.set_value("")
+                    self.__password_input.update()
+                    self.__confirm_password_input.update()
+                    self.__stack.controls.pop()
             else:
                 self.__password_input.set_error_text("")
                 self.__password_input.update()
@@ -90,6 +99,7 @@ class Newaccount(UserControl):
                 self.__password_input.update()
                 self.__confirm_password_input.update()
                 self.__stack.controls.pop()
+
     
     def __attempt_add_account(self,e):
         #check all data
@@ -181,6 +191,14 @@ class Newaccount(UserControl):
                 content=Column(
                     horizontal_alignment=CrossAxisAlignment.CENTER,
                     controls=[
+                        Row(
+                            controls=[
+                                IconButton(icon=icons.BACK_ROUNDED, on_click=lambda: self.__page.go('/Newaccount')),
+                                VerticalDivider(width=10, color="transparent"),
+                            ],
+                            alignment=MainAxisAlignment.SPACE_BETWEEN,
+                            vertical_alignment=CrossAxisAlignment.CENTER,  
+                        ),
                         Divider(height=20, color="transparent"),
                         Column(
                             controls=[

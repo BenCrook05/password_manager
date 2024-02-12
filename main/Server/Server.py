@@ -342,13 +342,10 @@ def create_new_user(data):
         for email in emails:
             if client_email == email[0]:
                 return "EMAIL ALREADY USED"
-        query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        values = (forename, names, client_email, password_hash, date_of_birth, phone_number, country, date.today(), permanent_public_key)
-        curs.execute(query, values)
-        curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
-        temp_UserID = curs.fetchone()[0]
         new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
-        curs.execute(f"UPDATE Users SET NewDeviceCode='{new_device_code}' WHERE UserID='{temp_UserID}'")
+        query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey, NewDeviceCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        values = (forename, names, client_email, password_hash, date_of_birth, phone_number, country, date.today(), permanent_public_key, new_device_code)
+        curs.execute(query, values)
         curs.close()
         db.commit()
         db.close()
@@ -367,8 +364,6 @@ def confirm_new_user(data):
         curs = db.cursor()
         curs.execute(f"SELECT NewDeviceCode FROM Users WHERE Email='{client_email}'")
         server_code = curs.fetchone()[0]
-        curs.close()
-        db.close()
         if str(server_code) == str(code) and len(str(server_code))>0:
             # add new device to database
             db = connect_to_db()
@@ -382,7 +377,7 @@ def confirm_new_user(data):
             db.close()
             send_email("SecureNet: Welcome to SecureNet", "Your account has been authenticated", client_email)
             return "ADDED USER"
-        else:
+        elif len(str(server_code)) != 0: 
             #incorrect code therefore no email validation therefore user account immediately deleted
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -390,6 +385,12 @@ def confirm_new_user(data):
             curs.close()
             db.commit()
             db.close()
+            return "INCORRECT CODE"
+        else:
+            curs.close()
+            db.close()
+            send_email("SecureNet: Attempted Account Authentication", "An attempt was made to authenticate a new account.\nIf this wasn't you, login to secure your account", client_email)
+            return "INCORRECT CODE"
     except Exception as e:
         write_errors(traceback.format_exc(),"Confirming new user")
         return ["FAILED",traceback.format_exc()]
@@ -414,7 +415,8 @@ def create_new_device(data):
             return "DEVICE ALREADY EXISTS"
         else:
             hasher = PasswordHasher()
-            if hasher.verify(db_password_hash, password.encode('utf-8')):
+            try:
+                hasher.verify(db_password_hash, password.encode('utf-8')):
                 new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
                 curs.execute(f"UPDATE Users SET NewDeviceCode='{new_device_code}' WHERE UserID='{temp_UserID}'")
                 curs.close()
@@ -422,7 +424,7 @@ def create_new_device(data):
                 db.close()
                 send_email("SecureNet: Authenticated New Device", new_device_code, client_email)
                 return "CODE SENT"
-            else:
+            except:
                 increase_login_attempts(client_email)
                 return "UNAUTHENTICATED"
     except Exception as e:
@@ -471,7 +473,7 @@ def authenticate_password(data):
     try:
         db = connect_to_db()
         curs = db.cursor()
-        query = "SELECT UserID FROM Users WHERE Email = ?"
+        query = "SELECT UserID FROM Users WHERE Email = %s"
         curs.execute(query, (client_email,))
         temp_UserID = curs.fetchone()[0]
         curs.execute(f"SELECT PasswordHash FROM Users WHERE UserID='{temp_UserID}'")
@@ -687,17 +689,23 @@ def get_all_passwords(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            curs.execute(f"""
-                SELECT Password, AdditionalInfo, PasswordKey, Manager
+            query = """
+                SELECT Passwords.PassID
                 FROM Passwords
                 JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID
-                WHERE Passwords.PassID = '{temp_PassID}' AND PasswordKeys.UserID = '{temp_UserID}'
-            """)
+                WHERE PasswordKeys.UserID = %s
+            """
+            curs.execute(query, (temp_UserID,))
             all_PassID = curs.fetchall()
             pass_info = []
-            for ID in all_PassID:
-                temp_PassID = ID[0]
-                curs.execute(f"SELECT Passwords.PassID, Password, PasswordKey, AdditionalInfo, URL, Title, Username, Lockdown FROM Passwords, PasswordKeys WHERE Passwords.PassID='{temp_PassID}' AND PasswordKeys.PassID='{temp_PassID}' AND PasswordKeys.UserID='{temp_UserID}'")
+            for temp_PassID in all_PassID:
+                query = """
+                    SELECT Passwords.PassID, Password, PasswordKey, AdditionalInfo, URL, Title, Username, Lockdown
+                    FROM Passwords
+                    INNER JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID
+                    WHERE Passwords.PassID = %s AND PasswordKeys.UserID = %s
+                """
+                curs.execute(query, (temp_PassID, temp_UserID))                
                 temp_PassID, password, password_key, additional_info, url, title, username, lockdown = curs.fetchone()
                 pass_info.append([temp_PassID,password,password_key,additional_info,url,title,username,lockdown])
             return pass_info
@@ -796,7 +804,7 @@ def add_new_password(data):
                     curs.close()
                     db.close()
                     return "PASSWORD ALREADY EXISTS"
-            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (?, ?, ?, ?, ?)"  #avoid sql injection
+            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (%s, %s, %s, %s, %s)"  #avoid sql injection
             values = (password, url, title, username, additional_info)
             curs.execute(query, values)
             temp_PassID = curs.lastrowid
@@ -853,7 +861,7 @@ def add_manager(data):
                 return "NOT MANAGER"
             db = connect_to_db()
             curs = db.cursor()
-            query = "SELECT UserID FROM Users WHERE Email = ?"
+            query = "SELECT UserID FROM Users WHERE Email = %s"
             curs.execute(query, (new_manager_email,))
             try:
                 manager_UserID = curs.fetchone()[0]
@@ -887,7 +895,7 @@ def get_manager_password_info(client_email, temp_PassID):
     try:
         db = connect_to_db()
         curs = db.cursor()
-        query = (f"SELECT UserID FROM Users WHERE Email='?'")
+        query = (f"SELECT UserID FROM Users WHERE Email=%s")
         values = (client_email,)
         curs.execute(query, values)
         temp_UserID = curs.fetchone()[0]
@@ -954,7 +962,7 @@ def get_password_users(data):
             if manager_only:  # only returns the users who are managers
                 curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=1")
             else:  # returns all users
-                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=0")
+                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}'")
             all_users = curs.fetchall()
             user_info = []
             for info in all_users:
@@ -1038,7 +1046,7 @@ def update_password(data):
                 return "NOT MANAGER"
             db = connect_to_db()
             curs = db.cursor()
-            query = f"UPDATE Passwords SET {type} = ? WHERE PassID = ?"
+            query = f"UPDATE Passwords SET {type} = %s WHERE PassID = %s"
             curs.execute(query, (new_info, temp_PassID))
             curs.close()
             db.commit()
@@ -1066,11 +1074,12 @@ def get_pending_passwordkeys(data):
                 return "NO PENDING PASSWORDS"
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
-            curs.execute(f"SELECT PasswordKey, PassID, Manager, SenderUserID, SymmetricKey, InputTime FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+            curs.execute(f"SELECT PasswordKey, PassID, Manager, SenderUserID, SymmetricKey, InsertTime FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
             shared_info = curs.fetchall()
             info_to_return = []
             for info in shared_info:
                 password_key, passID, manager, sender_UserID, symmetric_key, info_time = info
+                info_time = datetime.strptime(info_time,"%Y-%m-%d %H:%M:%S.%f")
                 now_time = datetime.now()
                 if now_time.month == info_time.month and now_time.year == info_time.year:
                     password_key = password_key.decode('utf-8')
@@ -1104,7 +1113,7 @@ def get_emails_sharing(data):
         try:
             db = connect_to_db()
             curs = db.cursor()
-            query = "SELECT UserID, Forename, Names, Email FROM Users WHERE Email = ?"
+            query = "SELECT UserID, Forename, Names, Email FROM Users WHERE Email = %s"
             curs.execute(query, (email,))
             try:
                 user_info = curs.fetchone()
@@ -1174,7 +1183,7 @@ def share_password(data):
                     INSERT INTO PendingPasswords (
                         PasswordKey, PassID, Manager, SenderUserID, RecipientUserID, SymmetricKey, InsertTime
                     ) VALUES (
-                        ?, ?, ?, ?, ?, ?, ?
+                        %s, %s, %s, %s, %s, %s, %s
                     )
                 """
                 values = (

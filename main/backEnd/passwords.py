@@ -6,7 +6,7 @@ import time
 
 class PassInfo:
     def __init__(self, passID, title, manager, password, password_key, password_users, password_managers):
-        self._passID = passID #protected not private so can be accessed by child class
+        self._passID = str(passID) #protected not private so can be accessed by child class
         self._title = title
         self._password_key = password_key
         self._password = password
@@ -206,11 +206,11 @@ class Info(PassInfo):
     
     
 class Password(PassInfo):
-    def __init__(self, passID, title, url, username, manager, password, password_key, password_users, password_managers):
+    def __init__(self, passID, title, url, username, manager, password, password_key, additional_info, password_users, password_managers):
         super().__init__(passID, title, manager, password, password_key, password_users, password_managers)
         self.__url = url
         self.__username = username
-        self.__additional_info = None
+        self.__additional_info = additional_info
 
     def get_summary(self):
         if self._lockdown == 0:

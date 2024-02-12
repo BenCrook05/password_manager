@@ -20,7 +20,7 @@ class Receivecode(UserControl):
     def __check_data(self, e):
         values = self.__code_input.value
         for value in values:
-            if re.match(r'^[0-9]+$', value):
+            if not re.match(r'^[0-9]+$', value):
                 self.__code_input.value = self.__code_input.value.replace(value,"")
                 self.__code_input.update()
         
