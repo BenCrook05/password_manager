@@ -31,7 +31,7 @@ class Sharer(UserControl):
             self.__stack.controls.append(ProRing())
             self.__stack.update()
             temp_email = self.__user_input.get_value()
-            if temp_email != self.__data.get_data("email"):
+            if temp_email != self.__data["email"]:
                 data = self.__homepage.get_manager().share_password_check(self.__passID, temp_email)
                 if data == "NO USER":
                     self.__stack.controls.pop()

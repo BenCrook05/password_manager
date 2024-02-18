@@ -24,6 +24,9 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         return type(data)(encrypted_data)
     
     elif isinstance(data, str):
+        length = len(data) % len(symmetric_key)
+        start_pos = int(symmetric_key[length])
+        symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
         return encryptor.encryptdecrypt(data, str(symmetric_key))
     else:
         return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)

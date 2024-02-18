@@ -60,18 +60,18 @@ class Home(UserControl):
         
     def __setup(self):
         try:
-            self.__email = self.__data.get_data('email') #will fail when first run from view due to no data
-            self.__password = self.__data.get_data('password')
+            self.__email = self.__data["email"] #will fail when first run from view due to no data
+            self.__password = self.__data["password"]
             self.__on_home = True
             self.__code = str(random.randint(10000,99999))
-            self.__data.add_data("extensioncode",str(self.__code))
+            self.__data["extensioncode"] = str(self.__code)
             try:
-                server_public_key = self.__data.get_data("server_public_key")
-                session_key = self.__data.get_data("session_key")
+                server_public_key = self.__data["server_public_key"]
+                session_key = self.__data["session_key"]
                 
                 client_permanent_key = Hash.create_client_permanent_key(self.__password, self.__email)
                 self.__manager = Manager(self.__email, self.__password, self.__data, session_key=session_key, server_public_key=server_public_key)
-                code = self.__data.get_data("extensioncode")
+                code = self.__data["extensioncode"]
                 self.__manager.save_initial_data(code,session_key,client_permanent_key)
                 print("setup complete")
                 

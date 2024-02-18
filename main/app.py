@@ -4,16 +4,6 @@ from assets.colours import Colours
 from extensionAPI import localserver as ls
 from datetime import datetime
 from threading import Thread
-class Data(dict):
-    def __init__(self):
-        super().__init__()
-        self._datadic={}
-    def add_data(self, label, info):
-        self._datadic[label] = info
-    def get_data(self, label):
-        return self._datadic[label]
-    def empty(self):
-        self._datadic = {}
         
         
 def run_flask_server():
@@ -37,7 +27,7 @@ def main(page: Page):
     page.window_visible = True
     page.window_prevent_close = True
     page.window_resizable = False
-    data = Data()
+    data = {}
 
 
     def on_window_event(e):

@@ -14,7 +14,7 @@ from backEnd.scan import PasswordChecker
 
 class Application:     
     @staticmethod
-    def __get_server_key():
+    def get_server_key():
         server_public_key = pr.get_server_key()
         map(int, server_public_key)
         print(server_public_key)
@@ -74,8 +74,11 @@ class Application:
         
     @staticmethod
     def login(email,password,datadic):
-        server_public_key = Application.__get_server_key()
-        datadic.add_data("server_public_key",server_public_key)
+        try:
+            server_public_key = datadic["server_public_key"]
+        except Exception as e:
+            server_public_key = Application.get_server_key()
+            datadic["server_public_key"] = server_public_key
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
         print(f"Stored password hash: {stored_password_hash}")
@@ -87,8 +90,8 @@ class Application:
     
     @staticmethod
     def login_new_device_request(email,password,datadic):
-        server_public_key = Application.__get_server_key()
-        datadic.add_data("server_public_key",server_public_key)
+        server_public_key = Application.get_server_key()
+        datadic["server_public_key"] = server_public_key
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
@@ -98,7 +101,7 @@ class Application:
        
     @staticmethod 
     def login_new_device_confirm(email,code, datadic):
-        server_public_key = datadic.get_data("server_public_key")
+        server_public_key = datadic["server_public_key"]
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         data = pr.confirm_device_code(server_public_key,email,mac_address_hash,code)
         return data
@@ -110,8 +113,8 @@ class Application:
             mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
             stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
             permanent_public_key = "abc"
-            server_public_key = Application.__get_server_key()
-            datadic.add_data("server_public_key",server_public_key)
+            server_public_key = Application.get_server_key()
+            datadic["server_public_key"] = server_public_key
             data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
             
             return data
@@ -121,7 +124,7 @@ class Application:
     @staticmethod
     def validate_new_account(email,code,datadic):
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
-        server_public_key = datadic.get_data("server_public_key")
+        server_public_key = datadic["server_public_key"]
         data = pr.confirm_new_user(server_public_key,email,mac_address_hash,code)
         return data
         

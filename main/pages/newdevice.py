@@ -24,8 +24,8 @@ class Newdevice(UserControl):
         self.__page.update()
     
     def __return_to_login(self,e):
-        self.__data.add_data("email",self.__email_input.get_value())
-        self.__data.add_data("password",self.__password_input.get_value())
+        self.__data["email"] = self.__email_input.get_value()
+        self.__data["password"] = self.__password_input.get_value()
         self.__page.go('/')
         
 
@@ -51,8 +51,8 @@ class Newdevice(UserControl):
             
             data = Application.login_new_device_request(email, password, self.__data)
             if data == "CODE SENT":
-                self.__data.add_data("email",email)
-                self.__data.add_data("password",password)
+                self.__data["email"] = email
+                self.__data["password"] = password
                 self.__stack.controls.clear()
                 self.__stack.update()
                 self.__stack.controls.append(

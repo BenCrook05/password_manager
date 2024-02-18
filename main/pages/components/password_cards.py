@@ -54,7 +54,7 @@ class PasswordCard(UserControl):
         #prevents loading favicon multiple times for same card
         self.__card.content.content.controls[0].controls.remove(self.__img)
         try:  # first tries to get icon data from data object
-            self.__img = self.__data.get_data(self.__url)
+            self.__img = self.__data["self.__url"]
         except Exception as e:
             #not stored in local dictionary
             try:  # then tries to get icon data from file
@@ -65,7 +65,7 @@ class PasswordCard(UserControl):
                 curs.close()
                 db.close()
                 self.__img = Image(src_base64=image_content, height=32, width=32)
-                self.__data.add_data(self.__url, self.__img)
+                self.__data[self.__url] =  self.__img
                     
             except Exception as e:  # if no icon data on the computer yet, uses API
                 # print(e)
@@ -82,10 +82,10 @@ class PasswordCard(UserControl):
                     db.commit()
                     db.close()
 
-                    self.__data.add_data(self.__url, self.__img)
+                    self.__data[self.__url] =  self.__img
                 else:
                     self.__img = Icon(icons.PERSON, color=TEXT_COLOUR, size=32)
-                    self.__data.add_data(self.__url, self.__img)
+                    self.__data[self.__url] =  self.__img
         self.__card.content.content.controls[0].controls.insert(1,self.__img)
         self.__card.update()
         

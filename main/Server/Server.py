@@ -1,6 +1,11 @@
 import sys
 sys.path.append('/home/BenCrook/mysite/')
 
+# from dotenv import load_dotenv
+import os
+
+# load_dotenv('/home/BenCrook/mysite/.env')
+
 from flask import Flask, request, jsonify
 
 import endToEnd_encryption as rsa
@@ -93,12 +98,12 @@ class Encryption:
         Used to store private key and store passwords on database
         Using fernet encryption included with cryptography
         '''
-        MASTERKEY = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
+        master_key = os.getenv('MASTERKEY')
         if include_day:
             current_date = str(date.today())
-            combined_string = (MASTERKEY + current_date).encode()
+            combined_string = (master_key + current_date).encode()
         else:
-            combined_string = MASTERKEY.encode()
+            combined_string = master_key.encode()
         hashed_key = hashlib.sha256(combined_string).digest()
         fernet_key = base64.urlsafe_b64encode(hashed_key)
         cipher_suite = Fernet(fernet_key)
@@ -175,6 +180,9 @@ class Encryption:
             return type(data)(encrypted_data)
         
         elif isinstance(data, str):
+            length = len(data) % len(symmetric_key)
+            start_pos = int(symmetric_key[length])
+            symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
             return encryptor.encryptdecrypt(data, str(symmetric_key))
         else:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
@@ -230,8 +238,9 @@ class Encryption:
 
 def connect_to_db():
     try:
+        db_password = os.getenv('DB_KEY')
         db = MySQLdb.connect('BenCrook.mysql.eu.pythonanywhere-services.com',
-                              'BenCrook', 'abE3kDD93ijkds9Ke', 'BenCrook$PI_manager')
+                              'BenCrook', db_password, 'BenCrook$PI_manager')
         return db
     except Exception as e:
         write_errors(traceback.format_exc(),"Connecting")
@@ -249,7 +258,9 @@ def write_errors(error_code="None",function_name="None"):
 def send_email(subject, content, recipient_address):
     try:
         email_sender = "securenetNEA@gmail.com"
-        email_password = "anlq nmyl ubtu xlxm"
+        email_password = os.getenv('EMAILPASSWORD')
+        if not email_password:
+            raise ValueError("No email password")
         email_receiver = recipient_address
         subject = subject
         #created in my strypo email editor
@@ -264,10 +275,11 @@ def send_email(subject, content, recipient_address):
                         text-align: center;
                     }}
                     h2 {{
+                        font-size: 20px;
                         color: #3498db;
                     }}
                     p {{
-                        font-size: 35px;
+                        font-size: 15px;
                         color: #555;
                     }}
                 </style>
@@ -343,13 +355,14 @@ def create_new_user(data):
             if client_email == email[0]:
                 return "EMAIL ALREADY USED"
         new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
+        password_hash = Encryption.encrypt_for_db(password_hash)
         query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey, NewDeviceCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         values = (forename, names, client_email, password_hash, date_of_birth, phone_number, country, date.today(), permanent_public_key, new_device_code)
         curs.execute(query, values)
         curs.close()
         db.commit()
         db.close()
-        send_email("SecureNet: Authenticated Account", new_device_code, client_email)
+        send_email(f"SecureNet: Authenticated Account\nCode: {new_device_code}", "Enter into application", client_email)
         return "CODE SENT"
     except Exception as e:
         write_errors(traceback.format_exc(),"Creating new user")
@@ -370,6 +383,7 @@ def confirm_new_user(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
+            mac_address_hash = Encryption.encrypt_for_db(mac_address_hash)
             curs.execute(f"INSERT INTO Devices(MacAddressHash, LoginDate, UserID) VALUES('{mac_address_hash}','{date.today()}','{temp_UserID}')")
             curs.execute(f"UPDATE Users SET NewDeviceCode=NULL WHERE UserID='{temp_UserID}'")
             curs.close()
@@ -407,6 +421,8 @@ def create_new_device(data):
         temp_UserID = curs.fetchone()[0]
         curs.execute(f"SELECT PasswordHash FROM Users WHERE UserID='{temp_UserID}'")
         db_password_hash = curs.fetchone()[0]
+        db_password_hash = Encryption.decrypt_from_db(db_password_hash)
+        mac_address_hash = Encryption.encrypt_for_db(mac_address_hash)
         curs.execute(f"SELECT DeviceID FROM Devices WHERE UserID='{temp_UserID}' AND MacAddressHash='{mac_address_hash}'")
         temp_deviceID = curs.fetchall()
         if len(temp_deviceID)>0:
@@ -416,13 +432,13 @@ def create_new_device(data):
         else:
             hasher = PasswordHasher()
             try:
-                hasher.verify(db_password_hash, password.encode('utf-8')):
+                hasher.verify(db_password_hash, password.encode('utf-8'))
                 new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
                 curs.execute(f"UPDATE Users SET NewDeviceCode='{new_device_code}' WHERE UserID='{temp_UserID}'")
                 curs.close()
                 db.commit()
                 db.close()
-                send_email("SecureNet: Authenticated New Device", new_device_code, client_email)
+                send_email(f"SecureNet: Authenticated New Device\nCode: {new_device_code}", "Enter code into application", client_email)
                 return "CODE SENT"
             except:
                 increase_login_attempts(client_email)
@@ -449,6 +465,7 @@ def confirm_device_code(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
+            mac_address_hash = Encryption.encrypt_for_db(mac_address_hash)
             curs.execute(f"INSERT INTO Devices(MacAddressHash, LoginDate, UserID) VALUES('{mac_address_hash}','{date.today()}','{temp_UserID}')")
             curs.execute(f"UPDATE Users SET NewDeviceCode=NULL WHERE UserID={temp_UserID}")
             curs.close()
@@ -473,11 +490,11 @@ def authenticate_password(data):
     try:
         db = connect_to_db()
         curs = db.cursor()
-        query = "SELECT UserID FROM Users WHERE Email = %s"
-        curs.execute(query, (client_email,))
+        curs.execute("SELECT UserID FROM Users WHERE Email = %s", (client_email,))
         temp_UserID = curs.fetchone()[0]
         curs.execute(f"SELECT PasswordHash FROM Users WHERE UserID='{temp_UserID}'")
         db_password_hash = curs.fetchone()[0]
+        db_password_hash = Encryption.decrypt_from_db(db_password_hash)
         curs.execute(f"SELECT LoginAttempts FROM Users WHERE UserID='{temp_UserID}'")
         temp_login_attempts = curs.fetchone()[0]
         curs.execute(f"SELECT FailedAttemptDate FROM Users WHERE UserID='{temp_UserID}'")
@@ -490,7 +507,7 @@ def authenticate_password(data):
                 db.close()
                 return "TOO MANY ATTEMPTS"
         try:
-            curs.execute(f"SELECT DeviceID FROM Devices WHERE UserID='{temp_UserID}' and MacAddressHash='{mac_address_hash}'")
+            curs.execute(f"SELECT DeviceID FROM Devices WHERE UserID='{temp_UserID}' and MacAddressHash=%s", (mac_address_hash,)) #parameterised only need for mac address as client input
             temp_DeviceID = curs.fetchone()[0] #will cause Exception if no device
             curs.close()
             db.close()
@@ -523,6 +540,7 @@ def authenticate_session_key(client_session_key):
         db.close()
         for key_date in keys_dates:
             key, date = key_date
+            key = Encryption.decrypt_from_db(key)
             if str(key) == str(client_session_key):
                 # confirms session key hasn't expired an hour
                 # creates a datetime object from the date in string format from db
@@ -548,6 +566,7 @@ def new_session_key(temp_deviceID):
     db=connect_to_db()
     curs=db.cursor()
     date_time = datetime.now()
+    session_key = Encryption.encrypt_for_db(session_key)
     curs.execute(f"DELETE FROM Sessions WHERE DeviceID='{temp_deviceID}'")
     curs.execute(f"INSERT INTO Sessions(DeviceID, SessionKey, CreationDate) values('{temp_deviceID}','{session_key}','{date_time}')")
     curs.close()
@@ -577,6 +596,8 @@ def get_password_overview(data):
             db.close()
             for db_password in temp_passwords:
                 URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password = db_password 
+                PasswordKey = Encryption.decrypt_from_db(PasswordKey)
+                Password = Encryption.decrypt_from_db(Password)
                 data["passID"] = PassID  #add passID to data to request managers and users
                 users_list = get_password_users(data)
                 data["manager_only"] = True
@@ -634,6 +655,8 @@ def get_password(data):
             password, additional_info, password_key, manager = curs.fetchone()
             curs.close()
             db.close()
+            password_key = Encryption.decrypt_from_db(password_key)
+            password = Encryption.decrypt_from_db(password)
             return [password, additional_info, password_key, manager]
         except Exception as e:
             write_errors(traceback.format_exc(), "Getting 1 password")
@@ -655,14 +678,17 @@ def reset_client_password(data):
             #verify user knows their raw password
             curs.execute(f"SELECT PasswordHash FROM Users WHERE Email='{client_email}'")
             original_password_hash = curs.fetchone()[0]
+            original_password_hash = Encryption.decrypt_from_db(original_password_hash)
             try:
                 hasher = PasswordHasher()
                 original_password_hash = "$argon2id$v=19$m=65536,t=2,p=4" + original_password_hash
                 if hasher.verify(original_password_hash.encode('utf-8'), raw_password.encode('utf-8')):
+                    new_password_hash = Encryption.encrypt_for_db(new_password_hash)
                     curs.execute(f"UPDATE Users SET PasswordHash='{new_password_hash}' WHERE Email='{client_email}'")
                     curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
                     temp_UserID = curs.fetchone()[0]
                     for passID, password_key in new_password_keys.items():
+                        password_key = Encryption.encrypt_for_db(password_key)
                         curs.execute(f"UPDATE PasswordKeys SET PasswordKey='{password_key}' WHERE PassID='{passID}' AND UserID='{temp_UserID}'")
                     curs.close()
                     db.commit()
@@ -702,11 +728,13 @@ def get_all_passwords(data):
                 query = """
                     SELECT Passwords.PassID, Password, PasswordKey, AdditionalInfo, URL, Title, Username, Lockdown
                     FROM Passwords
-                    INNER JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID
+                    JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID
                     WHERE Passwords.PassID = %s AND PasswordKeys.UserID = %s
                 """
                 curs.execute(query, (temp_PassID, temp_UserID))                
                 temp_PassID, password, password_key, additional_info, url, title, username, lockdown = curs.fetchone()
+                password_key = Encryption.decrypt_from_db(password_key)
+                password = Encryption.decrypt_from_db(password)
                 pass_info.append([temp_PassID,password,password_key,additional_info,url,title,username,lockdown])
             return pass_info
         except Exception as e:
@@ -755,7 +783,7 @@ def remove_lockdown(data):
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
             if temp_PassID == "all":
-                curs.execute("""UPDATE Passwords 
+                curs.execute(f"""UPDATE Passwords 
                     JOIN PasswordKeys ON Passwords.PassID = PasswordKeys.PassID 
                     SET Lockdown=0 WHERE PasswordKeys.UserID='{temp_UserID}' 
                     AND PasswordKeys.Manager = 1
@@ -800,10 +828,12 @@ def add_new_password(data):
             all_info = curs.fetchall()
             for info_group in all_info:
                 db_url, db_title, db_username = info_group
-                if db_url == url and db_title == title and db_username == username:
+                if (db_url == url or db_title == title) and db_username == username:
                     curs.close()
                     db.close()
                     return "PASSWORD ALREADY EXISTS"
+            password = Encryption.encrypt_for_db(password)
+            password_key = Encryption.encrypt_for_db(password_key)
             query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (%s, %s, %s, %s, %s)"  #avoid sql injection
             values = (password, url, title, username, additional_info)
             curs.execute(query, values)
@@ -1046,6 +1076,8 @@ def update_password(data):
                 return "NOT MANAGER"
             db = connect_to_db()
             curs = db.cursor()
+            if type == "Password":
+                new_info = Encryption.encrypt_for_db(new_info)
             query = f"UPDATE Passwords SET {type} = %s WHERE PassID = %s"
             curs.execute(query, (new_info, temp_PassID))
             curs.close()
@@ -1079,6 +1111,8 @@ def get_pending_passwordkeys(data):
             info_to_return = []
             for info in shared_info:
                 password_key, passID, manager, sender_UserID, symmetric_key, info_time = info
+                password_key = Encryption.decrypt_from_db(password_key)
+                symmetric_key = Encryption.decrypt_from_db(symmetric_key)
                 info_time = datetime.strptime(info_time,"%Y-%m-%d %H:%M:%S.%f")
                 now_time = datetime.now()
                 if now_time.month == info_time.month and now_time.year == info_time.year:
@@ -1179,6 +1213,8 @@ def share_password(data):
             except Exception as e:
                 password_key = password_key.replace(r"\\", "\\")
                 password_key = password_key.encode('utf-8')
+                password_key = Encryption.encrypt_for_db(password_key)
+                encrypted_symmetric_key = Encryption.encrypt_for_db(encrypted_symmetric_key)
                 query = """
                     INSERT INTO PendingPasswords (
                         PasswordKey, PassID, Manager, SenderUserID, RecipientUserID, SymmetricKey, InsertTime
@@ -1223,6 +1259,7 @@ def insert_pending_keys(data):
                 #get manager (can't rely on client input)
                 curs.execute(f"SELECT Manager FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
                 manager = curs.fetchone()[0]
+                password_key = Encryption.encrypt_for_db(password_key)
                 curs.execute(f"INSERT INTO PasswordKeys(PassID, UserID, PasswordKey, Manager) VALUES ('{passID}','{temp_UserID}','{password_key}','{manager}')")
                 curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
                 curs.close()
@@ -1255,7 +1292,7 @@ def receive_data():
     try:
         json_data = request.get_json()
         encrypted_symmetric_key = json_data["encrypted_symmetric_key"]
-        
+        write_errors(os.environ, "ENVIRONMENT")
         ### DECRYPT SYMMETRIC KEY ###
         symmetric_key = Encryption.decrypt_key_from_client(encrypted_symmetric_key)
         ### DECRYPT DATA ###

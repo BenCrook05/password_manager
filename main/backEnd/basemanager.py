@@ -88,7 +88,7 @@ class Manager():
         if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
             self.__session_key = data
             try:
-                code = self.__datastore.get_data("extensioncode")
+                code = self.__datastore["extensioncode"]
                 
                 db = sqlite3.connect(rf"extensionAPI\infoapi.db")
                 curs = db.cursor()

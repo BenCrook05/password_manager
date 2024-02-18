@@ -26,7 +26,7 @@ class Deleter(UserControl):
             self.__stack.update()
             try:
                 new_manager_email = self.__new_manager_email_input.get_value()
-                if new_manager_email != self.__data.get_data("email"):
+                if new_manager_email != self.__data["email"]:
                     data = self.__homepage.get_manager().delete_password_instance(self.__passID, new_manager_email)
                     print(data)
                     if data == "DELETED PASSWORD INSTANCE":

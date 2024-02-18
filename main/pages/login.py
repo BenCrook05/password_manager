@@ -42,13 +42,15 @@ class Login(UserControl):
                 if data in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                     raise ValueError
                 
-                self.__data.add_data("email",email)
-                self.__data.add_data("password",password)
-                self.__data.add_data("session_key",data)
+                self.__data["email"] = email
+                self.__data["password"] = password
+                self.__data["session_key"] = data
 
                 self.__page.go('/Home')
             else:
+                self.__data["server_public_key"] = Application.get_server_key()
                 raise ValueError
+            
         except Exception as e:
             self.__stay_signed_in.value = False    
             self.__email_input.set_value("")
@@ -89,20 +91,20 @@ class Login(UserControl):
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                 ### successful logging in due to no error
                 #update data dictionary
-                self.__data.add_data("email",email)
-                self.__data.add_data("password",password)
-                self.__data.add_data("session_key",data)
-                self.__page.update()
-                
-                if self.__stay_signed_in.value:
-                    Application.save_login_data(email,password)
-                else:
-                    try:
-                        Application.delete_saved_login_data()
-                    except:
-                        pass
-                self.__page.go('/Home')
-                
+                if len(data) == 64:  #definitely a session key
+                    self.__data["email"] = email
+                    self.__data["password"] = password
+                    self.__data["session_key"] = data
+                    self.__page.update()
+                    
+                    if self.__stay_signed_in.value:
+                        Application.save_login_data(email,password)
+                    else:
+                        try:
+                            Application.delete_saved_login_data()
+                        except:
+                            pass
+                    self.__page.go('/Home')
             else:
                 if data == "TOO MANY ATTEMPTS":
                     self.__login_success.value = "Account associated with this email\nhas been locked for 1 hour"
@@ -113,21 +115,21 @@ class Login(UserControl):
                 except Exception as e:
                     pass
                 
-                self.__email_input.change_disabled()
-                self.__password_input.change_disabled()
-                self.__sign_in_button.disabled = False
-                self.__email_input.update()
-                self.__password_input.update()
-                self.__sign_in_button.update()
-                self.__password_input.set_value("")
-                self.__password_input.update()
-                self.__login_success.update()
-                self.__container_info.update()
-                
-                self.__stack.controls.pop()
-                self.__stack.update()
-       
-                self.__processing = False
+            self.__email_input.change_disabled()
+            self.__password_input.change_disabled()
+            self.__sign_in_button.disabled = False
+            self.__email_input.update()
+            self.__password_input.update()
+            self.__sign_in_button.update()
+            self.__password_input.set_value("")
+            self.__password_input.update()
+            self.__login_success.update()
+            self.__container_info.update()
+            
+            self.__stack.controls.pop()
+            self.__stack.update()
+    
+            self.__processing = False
 
     def build(self):
         self.__email_input = Input("PERSON_ROUNDED","Email",focus=True,max_length=64)
