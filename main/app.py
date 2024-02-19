@@ -1,13 +1,7 @@
 from flet import *
 from views import views_handler
 from assets.colours import Colours
-from extensionAPI import localserver as ls
 from datetime import datetime
-from threading import Thread
-        
-        
-def run_flask_server():
-    ls.app.run(host='127.0.0.1', port=5000)
 
 
 def main(page: Page):
@@ -59,8 +53,6 @@ def main(page: Page):
 
     
 if __name__ == '__main__':
-    flask_thread = Thread(target=run_flask_server)
-    flask_thread.start()
     app(port=8550, target=main)
     
     

@@ -44,7 +44,7 @@ class Receivecode(UserControl):
                     duration=3000,
                 )
                 self.__page.snack_bar.open = True
-                self.__data.empty()
+                self.__data = {}
                 self.__page.go('/')
                 
         
@@ -67,7 +67,7 @@ class Receivecode(UserControl):
                     duration=3000,
                 )
                 self.__page.snack_bar.open = True
-                self.__data.empty()
+                self.__data = {}
                 self.__page.go('/')
 
     

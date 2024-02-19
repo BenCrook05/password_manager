@@ -97,8 +97,6 @@ class Decrypt:
 
     @staticmethod
     def decrypt_password_key_to_share(password_key, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # decrypted_password_key = encryptdecrypt_directory(password_key, symmetric_key, encryptor)
         salt = b'constantSalt'
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),

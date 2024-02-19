@@ -115,21 +115,21 @@ class Login(UserControl):
                 except Exception as e:
                     pass
                 
-            self.__email_input.change_disabled()
-            self.__password_input.change_disabled()
-            self.__sign_in_button.disabled = False
-            self.__email_input.update()
-            self.__password_input.update()
-            self.__sign_in_button.update()
-            self.__password_input.set_value("")
-            self.__password_input.update()
-            self.__login_success.update()
-            self.__container_info.update()
-            
-            self.__stack.controls.pop()
-            self.__stack.update()
-    
-            self.__processing = False
+                self.__email_input.change_disabled()
+                self.__password_input.change_disabled()
+                self.__sign_in_button.disabled = False
+                self.__email_input.update()
+                self.__password_input.update()
+                self.__sign_in_button.update()
+                self.__password_input.set_value("")
+                self.__password_input.update()
+                self.__login_success.update()
+                self.__container_info.update()
+                
+                self.__stack.controls.pop()
+                self.__stack.update()
+        
+                self.__processing = False
 
     def build(self):
         self.__email_input = Input("PERSON_ROUNDED","Email",focus=True,max_length=64)

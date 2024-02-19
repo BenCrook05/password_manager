@@ -72,12 +72,15 @@ class Home(UserControl):
                 client_permanent_key = Hash.create_client_permanent_key(self.__password, self.__email)
                 self.__manager = Manager(self.__email, self.__password, self.__data, session_key=session_key, server_public_key=server_public_key)
                 code = self.__data["extensioncode"]
-                self.__manager.save_initial_data(code,session_key,client_permanent_key)
                 print("setup complete")
                 
             except Exception as e:
                 print(traceback.format_exc())
-                self.__manager = Manager(self.__email, self.__password, self.__data)
+                try:
+                    self.__manager = Manager(self.__email, self.__password, self.__data)
+                except Exception as e:
+                    self.__page.go('/')
+                
                 
             self.__manager.import_passwords()
             
@@ -152,7 +155,7 @@ class Home(UserControl):
             self.__main_container.update()
         while self.__unable_to_logout:
             pass
-        self.__data.empty()
+        self.__data = {}
         db=sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         curs.execute("DELETE FROM CurrentUser")
@@ -546,7 +549,7 @@ class Home(UserControl):
         self.__initialise()     
                
         self.__top_column = Column(
-            contents=[
+            controls=[
                 self.__row
             ],
             spacing=0,

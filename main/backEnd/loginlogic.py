@@ -116,7 +116,6 @@ class Application:
             server_public_key = Application.get_server_key()
             datadic["server_public_key"] = server_public_key
             data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
-            
             return data
         else:
             return "INVALID EMAIL"
@@ -130,14 +129,14 @@ class Application:
         
     @staticmethod
     def check_password_is_suitable(password):
-        checker = PasswordChecker({
+        checker = PasswordChecker([{
             "password": password,
             "username": "",
             "passID": 0,
             "url": "",
             "title": "",
-        })
-        password_rating = checker.scan_all_passwords()["rating"]
+        }])
+        password_rating = checker.scan_all_passwords()[0]["rating"]
         if password_rating > 0.7:
             return True
         else:

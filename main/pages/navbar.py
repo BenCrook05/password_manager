@@ -15,13 +15,6 @@ class Navbar(UserControl):
     def __close(self, e):
         # self.__page.window_visible = False
         # self.__page.update()
-        db = sqlite3.connect(rf"extensionAPI\infoapi.db")
-        curs = db.cursor()
-        curs.execute("DELETE FROM Keys")
-        curs.execute("DELETE FROM UrlPassID")
-        curs.close()
-        db.commit()
-        db.close()
         self.__page.window_prevent_close = False
         self.__page.update()
         self.__page.window_close()
@@ -48,7 +41,7 @@ class Navbar(UserControl):
                             ])
                         )
                     ], alignment="spaceBetween",),
-                    bgcolor = BACKGROUND_COLOUR_2,
+                    bgcolor = BACKGROUND_COLOUR,
                     border=Border(
                         bottom=BorderSide(2, TEXT_COLOUR),
                         top=BorderSide(1, "transparent"),

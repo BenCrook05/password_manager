@@ -60,7 +60,7 @@ class Newaccount(UserControl):
                             duration=3000,
                         )
                         self.__page.snack_bar.open = True
-                        self.__data.empty()
+                        self.__data = {}
                         self.__page.go('/')
 
                         self.__stack.controls.pop()
@@ -77,7 +77,7 @@ class Newaccount(UserControl):
                             duration=3000,
                         )
                         self.__page.snack_bar.open = True
-                        self.__data.empty()
+                        self.__data = {}
                         self.__page.go('/')
                 else:
                     self.__password_input.set_error_text("")
@@ -193,7 +193,7 @@ class Newaccount(UserControl):
                     controls=[
                         Row(
                             controls=[
-                                IconButton(icon=icons.BACK_ROUNDED, on_click=lambda: self.__page.go('/Newaccount')),
+                                IconButton(icon=icons.ARROW_BACK_IOS_NEW, on_click=lambda: self.__page.go('/Newaccount')),
                                 VerticalDivider(width=10, color="transparent"),
                             ],
                             alignment=MainAxisAlignment.SPACE_BETWEEN,
