@@ -215,10 +215,10 @@ class Newaccount(UserControl):
                             horizontal_alignment=CrossAxisAlignment.CENTER,
                             spacing=5,
                             controls = [
-                                Text(value="Create a Password",size=23, weight=FontWeight.BOLD, color=BACKGROUND_COLOUR),
+                                Text(value="Create a Password",size=23, weight=FontWeight.BOLD, color=TEXT_COLOUR),
                                 Divider(height=5, color="transparent"),
                                 Text(value=f"You won't ever be able to reset this password,\nso make sure you remember it!", 
-                                        size=13, color=BACKGROUND_COLOUR),
+                                        size=13,color=TEXT_COLOUR),
                             ]
                         ),
                         Divider(height=10,color="transparent"),

@@ -22,7 +22,9 @@ class PyAnyWhereRequests:
         
     @staticmethod
     def add_new_user(server_public_key, forename, names, client_email, password_hash, date_of_birth, phone_number, country, permanent_public_key, mac_address_hash):
+        #generate keys used for encrypting data
         client_public_key, client_private_key, symmetric_key, encrypted_symmetric_key = PyAnyWhereRequests.create_encryption_keys(server_public_key)
+        #format arguments into dictionary to convert to json
         data = {
             "forename": forename,
             "names": names,
@@ -33,11 +35,12 @@ class PyAnyWhereRequests:
             "country": country,
             "permanent_public_key": permanent_public_key,
             "mac_address_hash": mac_address_hash,
-            "error_check": Generate.create_error_check(),
+            "error_check": Generate.create_error_check(),  #used to check encryption was successful
         }
         encrypted_data = Encrypt.encrypt_data_to_server(data, symmetric_key) #encrypts data using symmetric key
         data_to_return = PyAnyWhereRequests.send_request("add_new_user", encrypted_data, client_public_key = client_public_key, encrypted_symmetric_key = encrypted_symmetric_key) #includes client public key so server can encrypt data using client public key
         try:
+            #error will be raised with encryption error so will-rerequest until successful.
             formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
             return formated_data
         except Exception as e:
@@ -110,23 +113,6 @@ class PyAnyWhereRequests:
             return formated_data
         except Exception as e:
             return PyAnyWhereRequests.authenticate_password(server_public_key, client_email, mac_address_hash, password)    
-    
-    @staticmethod
-    def confirm_new_device_password(server_public_key, client_email, mac_address_hash, password_confirmation):
-        client_public_key, client_private_key, symmetric_key, encrypted_symmetric_key = PyAnyWhereRequests.create_encryption_keys(server_public_key)
-        data = {
-            "password_confirmation": password_confirmation,
-            "mac_address_hash": mac_address_hash,
-            "client_email": client_email,
-            "error_check": Generate.create_error_check(),
-        }
-        encrypted_data = Encrypt.encrypt_data_to_server(data, symmetric_key)
-        data_to_return = PyAnyWhereRequests.send_request("confirm_password_add_device", encrypted_data, client_public_key = client_public_key, encrypted_symmetric_key = encrypted_symmetric_key)
-        try:
-            formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
-            return formated_data
-        except Exception as e:
-            return PyAnyWhereRequests.confirm_new_device_password(server_public_key, client_email, mac_address_hash, password_confirmation)
             
     @staticmethod
     def reset_client_password(server_public_key, session_key, client_email, new_password_hash, raw_password, new_password_keys):
@@ -499,32 +485,30 @@ class PyAnyWhereRequests:
     
     @staticmethod
     def format_data(data_to_return, client_private_key):
+        #raises error if any fail in encryption process
         encrypted_symmetric_key = data_to_return["encrypted_symmetric_key"]
         encrypted_data = data_to_return["data"]
         symmetric_key = Decrypt.decrypt_key_from_server(encrypted_symmetric_key, client_private_key)
         flag = data_to_return["flag"]
         if flag == "encryption fail":
-            print("Encryption failed - Server end")
             raise Exception("KeyError")
         elif flag == "encryption success":
             if len(symmetric_key) != 24:
-                print("Key too long, could cause error, retrying")
                 raise Exception("KeyError")
             data = Decrypt.decrypt_data_from_server(encrypted_data, str(symmetric_key))
             error_check = data["error_check"]
             if Generate.validate_error_check(error_check):
+                #extremely unlikely for error check to fail, but last precaution
                 returned_data = data["data"]
                 try:
                     if returned_data[0]=="FAILED":
-                        print("FAILED")
                         return "FAILED"
-                    else:
-                        print(f"Data direct: {returned_data}")
-                        return returned_data
                 except:
-                    return returned_data
+                    pass
+                #returns data if no errors
+                print(f"Data received: {returned_data}")
+                return returned_data
             else:
-                print("Error check failed - client end")
                 raise Exception("KeyError")
         
         
@@ -540,13 +524,14 @@ class PyAnyWhereRequests:
         }
         try:
             start_time = datetime.now()
+            #all requests use post then handled by server
             response = requests.post(url,json=dic_to_send) 
+            #checks request was good before trying to return data
             if response.status_code == 200:
                 print(f"\nSuccessful request: {request_header}, Duration: {datetime.now()-start_time}")
                 response_data = response.json()  
                 return response_data
-                
-         
+
             print(f"Unsuccessful request, status code: {response.status_code}, request: {request_header}")
         
         except Exception as e:

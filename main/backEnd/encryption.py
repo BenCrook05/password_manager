@@ -1,5 +1,4 @@
-# all decrypt methods must also check for error message in data
-# must print error message as it is not handled by the method
+
 import base64
 from cryptography.fernet import Fernet
 import hashlib
@@ -11,6 +10,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import random
 import time
+from dotenv import load_dotenv
+import os
+load_dotenv('/assets/.env')
 
 def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
     count += 1
@@ -32,7 +34,6 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
     
 
-# need to do all of these
 class Encrypt:
     @staticmethod
     def encrypt_key_to_server(data, public_key):
@@ -48,8 +49,7 @@ class Encrypt:
 
     @staticmethod
     def encrypt_password_key_to_share(password_key, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # encrypted_password_key = encryptdecrypt_directory(password_key, symmetric_key, encryptor)
+        #uses Fernet to prevent error (related to special characters) caused by using XOR 
         salt = b'constantSalt'
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
@@ -60,7 +60,6 @@ class Encrypt:
         key = base64.urlsafe_b64encode(kdf.derive(symmetric_key.encode('utf-8')))
         f = Fernet(key)
         encrypted_password_key = f.encrypt(password_key.encode('utf-8')).decode('utf-8')
-        print(f"Type: {type(encrypted_password_key)}")
         return encrypted_password_key
 
     @staticmethod
@@ -68,7 +67,7 @@ class Encrypt:
         encrypted_key = rsa.AsyncRSA.encrypt_symmetric_key(symmetric_key, e, n, increments=3)
         return encrypted_key
 
-    @staticmethod #used for symmetric encryption when storing password key on server
+    @staticmethod
     def encrypt_password_key(password_key,client_permanent_key):
         f = Fernet(client_permanent_key)
         encrypted_password_key = f.encrypt(password_key.encode('utf-8'))
@@ -156,9 +155,10 @@ class Generate:
     
     @staticmethod
     def generate_fernet(extra=""):
-        ADDED_STRING = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
+        ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
         ADDED_STRING += extra
-        ADDED_STRING = ADDED_STRING[-50:]
+        #only 50 characters required for corrent Fernet encryption
+        ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
         combined_string = (str(uuid.getnode())+ ADDED_STRING).encode()
         hashed_key = hashlib.sha256(combined_string).digest()
         fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
@@ -172,7 +172,6 @@ class Generate:
         keys = list(map(int, keys))
         for key in keys:
             if key >= max_length:
-                print(f"Invalid session key, regenerating... (encrypted_session key = {encrypted_symmetric_key})")
                 time.sleep(0.00001)  #gives .dll opportunity to reset random time seed
                 return False
         return True

@@ -18,7 +18,6 @@ from pages.components.deleter import Deleter
 from pages.components.viewusers import ViewUsers
 from pages.components.lockdown import Lockdown
 from pages.components.settings import Settings
-from pages.components.codesharer import CodeSharer
 from pages.components.scanner import Scanner
 from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
@@ -41,7 +40,6 @@ class Home(UserControl):
         self.__processing = False  #used to prevent multiple requests simultaneously
         self.__email = None
         self.__password = None
-        self.__code = None
         self.__current_passID = None
         self.__current_password = None
         self.__current_title = None
@@ -63,15 +61,13 @@ class Home(UserControl):
             self.__email = self.__data["email"] #will fail when first run from view due to no data
             self.__password = self.__data["password"]
             self.__on_home = True
-            self.__code = str(random.randint(10000,99999))
-            self.__data["extensioncode"] = str(self.__code)
+
             try:
                 server_public_key = self.__data["server_public_key"]
                 session_key = self.__data["session_key"]
                 
                 client_permanent_key = Hash.create_client_permanent_key(self.__password, self.__email)
                 self.__manager = Manager(self.__email, self.__password, self.__data, session_key=session_key, server_public_key=server_public_key)
-                code = self.__data["extensioncode"]
                 print("setup complete")
                 
             except Exception as e:
@@ -137,7 +133,9 @@ class Home(UserControl):
             self.__get_pending_passwords()
             
         elif self.__navrail.get_selected_index() == 3:
-            self.__share_extension_code()
+            self.__export_passwords()
+            self.__navrail.set_selected_index(0)
+            self.__navrail.update()
             
         elif self.__navrail.get_selected_index() == 4:
             self.__scan_passwords()
@@ -196,9 +194,17 @@ class Home(UserControl):
         self.__main_container.update()
 
 
-    def __share_extension_code(self):
-        self.__main_container.content = CodeSharer(self,self.__code)
-        self.__main_container.update()
+    def __export_passwords(self):
+        if self.__manager.export_all(download_csv=True):
+            self.__page.snack_bar = SnackBar(
+                content=Text("Passwords exported",color=TEXT_COLOUR),
+                bgcolor=BACKGROUND_COLOUR_2,
+                elevation=5,
+                margin=5,
+                duration=3000,
+            )
+            self.__page.snack_bar.open = True
+            self.__page.update()
 
     def share_password(self,passID, type):
         self.__main_container.content = Sharer(self,self.__data,passID,type)

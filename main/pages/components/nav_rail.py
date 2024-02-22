@@ -30,37 +30,37 @@ class NavSideRail(UserControl):
                     NavigationRailDestination(
                         icon=icons.HOME_OUTLINED,
                         selected_icon=icons.HOME,
-                        label_content=Text("Home"),
+                        label_content=Text("Home",color=TEXT_COLOUR),
                     ),
                     NavigationRailDestination(
                         icon=icons.REFRESH,
                         selected_icon=icons.REFRESH,
-                        label_content=Text("Refresh"),
+                        label_content=Text("Refresh",color=TEXT_COLOUR),
                     ),
                     NavigationRailDestination(
-                        icon=icons.CLOUD_DOWNLOAD_OUTLINED,
-                        selected_icon=icons.CLOUD_DOWNLOAD,
-                        label_content=Text("Download"),
+                        icon=icons.GROUPS_OUTLINED,
+                        selected_icon=icons.GROUPS,
+                        label_content=Text(" Shared\nwith you",color=TEXT_COLOUR),
                     ),
                     NavigationRailDestination(
-                        icon=icons.PRIVATE_CONNECTIVITY_OUTLINED,
-                        selected_icon = icons.PRIVATE_CONNECTIVITY_ROUNDED,
-                        label_content = Text("Extension")
+                        icon=icons.DOWNLOAD_OUTLINED,
+                        selected_icon = icons.DOWNLOAD,
+                        label_content = Text("Export",color=TEXT_COLOUR)
                     ),
                     NavigationRailDestination(
                         icon=icons.CHECKLIST_ROUNDED,
                         selected_icon=icons.CHECKLIST_RTL_ROUNDED,
-                        label_content=Text("Scan")
+                        label_content=Text("Scan",color=TEXT_COLOUR)
                     ),
                     NavigationRailDestination(
                         icon=icons.SETTINGS_OUTLINED,
                         selected_icon=icons.SETTINGS_ROUNDED,
-                        label_content=Text("Settings"),
+                        label_content=Text("Settings",color=TEXT_COLOUR),
                     ),
                     NavigationRailDestination(
                         icon=icons.LOGOUT_ROUNDED,
                         selected_icon=icons.LOGOUT_ROUNDED,
-                        label_content=Text("Logout"),
+                        label_content=Text("Logout",color=TEXT_COLOUR),
                     ),
                     
                 ],

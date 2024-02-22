@@ -769,7 +769,9 @@ def set_to_lockdown(data):
             #check user has password
             curs.execute(f"SELECT PassID FROM PasswordKeys WHERE UserID='{temp_UserID}'")
             all_PassID = curs.fetchall()
-            if (temp_PassID,) not in all_PassID:
+            write_errors(f"PassID: {temp_PassID}","Setting to lockdown")
+            write_errors(f"all_PassID: {all_PassID}","Setting to lockdown")
+            if (int(temp_PassID),) not in all_PassID:
                 return "NO PASSWORD"
             curs.execute(f"UPDATE Passwords SET Lockdown=1 WHERE PassID='{temp_PassID}'")
             curs.close()
@@ -840,7 +842,7 @@ def add_new_password(data):
             all_info = curs.fetchall()
             for info_group in all_info:
                 db_url, db_title, db_username = info_group
-                if (db_url == url or db_title == title) and db_username == username:
+                if (db_url == url or db_title == title) and (db_username == username and username != ""):
                     curs.close()
                     db.close()
                     return "PASSWORD ALREADY EXISTS"
@@ -1211,6 +1213,7 @@ def share_password(data):
                 curs.close()
                 db.close()
                 return "NOT MANAGER"
+            
             try:
                 curs.execute(f"SELECT Manager FROM PasswordKeys WHERE UserID='{recipient_UserID}' AND PassID='{passID}'")
                 manager_recipient = curs.fetchone()[0] #will cause error if None returned
@@ -1220,6 +1223,7 @@ def share_password(data):
                     return "PASSWORD ALREADY SHARED MANAGER"
                 else:
                     return "PASSWORD ALREADY SHARED NOT MANAGER"
+                
             except Exception as e:
                 password_key = Encryption.encrypt_for_db(password_key)
                 encrypted_symmetric_key = Encryption.encrypt_for_db(encrypted_symmetric_key)
@@ -1263,6 +1267,7 @@ def insert_pending_keys(data):
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
+            
             if accept == "Accept":
                 #get manager (can't rely on client input)
                 curs.execute(f"SELECT Manager FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
@@ -1270,21 +1275,30 @@ def insert_pending_keys(data):
                 password_key = Encryption.encrypt_for_db(password_key)
                 curs.execute(f"INSERT INTO PasswordKeys(PassID, UserID, PasswordKey, Manager) VALUES ('{passID}','{temp_UserID}','{password_key}','{manager}')")
                 curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
+                
+                #check whether there are any more pending passwords for user
+                curs.execute(f"SELECT PassID FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+                pending = curs.fetchall()
+                if len(pending) == 0:
+                    curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
                 curs.close()
                 db.commit()
                 db.close()
                 return "PASSWORD ADDED"
+            
             elif accept == "Reject":
                 curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
                 curs.close()
                 db.commit()
                 db.close()
                 return "PASSWORD DECLINED"
+            
             else:
                 curs.close()
                 db.commit()
                 db.close()
                 return "NO ACTION"
+            
         except Exception as e:
             write_errors(traceback.format_exc(),"Inserting pending keys")
             return ["FAILED",traceback.format_exc()]

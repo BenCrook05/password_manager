@@ -69,43 +69,31 @@ class Lockdown(UserControl):
                             padding=20,
                             margin=20,
                             border_radius=10,
-                            bgcolor="#FF7669",
+                            bgcolor="#F39E9C",
                             border=border.all(2,"red"),
                             content=Column(
                                 controls=[
+                                    Icon(
+                                        icons.LOCK_ROUNDED,
+                                        color=BACKGROUND_COLOUR,
+                                        size=80,
+                                        opacity=0.8,
+                                    ),
                                     Text("You will only be able to recover the password from this device.", size=14, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
                                     Text("Are you sure you want to lockdown this password?", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
+                                    
                                 ],
-                                height=60,
+                                height=200,
                                 spacing=10,
                                 alignment=MainAxisAlignment.SPACE_EVENLY,
                                 horizontal_alignment=CrossAxisAlignment.CENTER,
                             ),
                         ),
-                        Row(
-                            controls=[
-                                VerticalDivider(width=20, color=TEXT_COLOUR),
-                                ElevatedButton(
-                                    text="Yes",
-                                    on_click=self.__set_to_lockdown,
-                                ),
-                                ElevatedButton(
-                                    text="No",
-                                    on_click=self.__back,
-                                ),
-                                VerticalDivider(width=20, color=TEXT_COLOUR),
-                            ],
-                            spacing=20,
-                            alignment=MainAxisAlignment.SPACE_BETWEEN,
-                            vertical_alignment=CrossAxisAlignment.CENTER,
+                        Divider(height=10, color="transparent"),
+                        ElevatedButton(
+                            text="Yes",
+                            on_click=self.__set_to_lockdown,
                         ),
-                        Divider(color="transparent",height=20),
-                        Icon(
-                            icons.LOCK_ROUNDED,
-                            color="red",
-                            size=200,
-                            opacity=0.8,
-                        )
                     ],
                     spacing=20,
                     alignment=MainAxisAlignment.START,

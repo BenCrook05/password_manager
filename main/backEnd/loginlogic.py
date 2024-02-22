@@ -17,11 +17,11 @@ class Application:
     def get_server_key():
         server_public_key = pr.get_server_key()
         map(int, server_public_key)
-        print(server_public_key)
         return server_public_key
     
     @staticmethod
     def attempt_get_saved_data():
+        #tries to get saved data from database for auto login
         try:
             db=sqlite3.connect(rf"assets\assetdata.db")
             curs = db.cursor()
@@ -30,14 +30,13 @@ class Application:
             curs.close()
             db.close()
             if data is not None:
-                print("attempting auto login")
                 fernet_key = Generate.generate_fernet()
                 encrypted_email = base64.b64decode(data[0].encode("utf-8"))
                 encrypted_password = base64.b64decode(data[1].encode("utf-8"))
                 email = fernet_key.decrypt(encrypted_email).decode("utf-8")
                 password = fernet_key.decrypt(encrypted_password).decode("utf-8")
+                #checks date less than 14 days ago
                 data_time_last_login = datetime.strptime(data[2], '%Y-%m-%d %H:%M:%S')
-                print(f"email: {email}, password: {password}, date: {data_time_last_login}")
                 if data_time_last_login > datetime.now() - timedelta(days=14):    
                     return email, password
                 else:
@@ -49,6 +48,7 @@ class Application:
     
     @staticmethod
     def save_login_data(email,password):
+        #save data in database if user wants to remain logged in 
         db = sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
         fernet_key = Generate.generate_fernet()
@@ -77,15 +77,16 @@ class Application:
         try:
             server_public_key = datadic["server_public_key"]
         except Exception as e:
+            #stores public key in shared dictionary to reduce the number of requests required
             server_public_key = Application.get_server_key()
             datadic["server_public_key"] = server_public_key
+        #first creates hash of password using constant salt
+        #then generates hash of the initial hash using a random salt 
+        #second hash is sent to server for comparison
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
-        print(f"Stored password hash: {stored_password_hash}")
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
-        print(f"Comparitive password hash: {comparitive_password_hash}")
         data = pr.authenticate_password(server_public_key,email,mac_address_hash,comparitive_password_hash)
-        print(data)
         return data
     
     @staticmethod
@@ -95,7 +96,6 @@ class Application:
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
-        print("application attempting to login new device")
         data = pr.add_new_device_request(server_public_key,email,mac_address_hash,comparitive_password_hash)
         return data
        
@@ -112,7 +112,7 @@ class Application:
         if valid_email:
             mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
             stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
-            permanent_public_key = "abc"
+            permanent_public_key = "place-holder"  #immediately replaced by Manager 
             server_public_key = Application.get_server_key()
             datadic["server_public_key"] = server_public_key
             data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)

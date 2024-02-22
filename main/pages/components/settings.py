@@ -4,6 +4,7 @@ import socket
 from pages.components.pro_ring import ProRing
 from assets.colours import Colours
 from pages.components.inputs import Input
+from backEnd.loginlogic import Application
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
 
@@ -76,9 +77,11 @@ class Settings(UserControl):
             self.__processing = True
             self.__stack.controls.append(ProRing())
             self.__stack.update()               
-            if self.__homepage.get_manager().validate_client_password(self.__current_password_input.get_value()):
-                if self.__new_password_input.get_value() != "":
-                    self.__homepage.get_manager().reset_client_password(self.__new_password_input.get_value())
+            new_password_value = self.__current_password_input.get_value()
+            if self.__homepage.get_manager().validate_client_password(new_password_value):
+                #checks password is strong enough before changing
+                if self.__new_password_input.get_value() != "" and Application.check_password_is_suitable(new_password_value):
+                    self.__homepage.get_manager().reset_client_password(new_password_value)
                     self.__homepage.get_page().snack_bar = SnackBar(
                         content=Text("Password reset, please login again using your new password",color=TEXT_COLOUR),
                         bgcolor=BACKGROUND_COLOUR_2,
@@ -92,7 +95,7 @@ class Settings(UserControl):
                     self.__homepage.logout()
                 else:
                     self.__homepage.get_page().snack_bar = SnackBar(
-                        content=Text("Please enter a new password",color=TEXT_COLOUR),
+                        content=Text("Please enter a suitably strong new password",color=TEXT_COLOUR),
                         bgcolor=BACKGROUND_COLOUR_2,
                         elevation=5,
                         margin=5,
@@ -158,7 +161,7 @@ class Settings(UserControl):
             
         self.__lockdown_switch = Switch(
             value=False,
-            label="Unlock all passwords",
+            label="Unlock?",
             on_change=self.__remove_lockdown,
         )
 

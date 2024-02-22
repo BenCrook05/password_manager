@@ -61,22 +61,18 @@ class Newdevice(UserControl):
                 self.__stack.update()
                 
             elif data == "DEVICE ALREADY USED":
-                self.__dlg = AlertDialog(
-                    shape=StadiumBorder,
-                    modal = True,
-                    content=Text("Device Already Associated with Account",size=15),
-                    actions=[
-                        TextButton("Return to Login", on_click=self.__return_to_login),
-                        TextButton("Close", on_click=self.__close_dlg)
-                    ],
-                    actions_alignment=MainAxisAlignment.CENTER,
-                    actions_padding=5,
+                self.__page.snack_bar = SnackBar(
+                    content=Text("Device is already verified",color=TEXT_COLOUR),
+                    bgcolor=BACKGROUND_COLOUR_2,
+                    elevation=5,
+                    margin=5,
+                    duration=3000,
                 )
-                self.__stack.controls.pop()
-                self.__stack.update()
-                self.__page.dialog = self.__dlg
-                self.__dlg.open = True
+                self.__page.snack_bar.open = True
+                #device already used so user can just login using normal login page
+                self.__page.go('/')
                 self.__page.update()
+                
             else:
                 self.__email_input.change_disabled()
                 self.__password_input.change_disabled()

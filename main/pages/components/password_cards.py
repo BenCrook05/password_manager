@@ -118,8 +118,8 @@ class PasswordCard(UserControl):
                                     VerticalDivider(color="transparent",width=6),
                                     Column(
                                         controls=[
-                                            Text(self.__showing_title,size=19,weight=FontWeight.BOLD,font_family="Afacad"),
-                                            Text(self.__showing_username,size=13, opacity=0.7),
+                                            Text(self.__showing_title,size=19,weight=FontWeight.BOLD,font_family="Afacad",color=TEXT_COLOUR),
+                                            Text(self.__showing_username,size=13, opacity=0.7,color=TEXT_COLOUR),
                                         ],
                                         alignment=MainAxisAlignment.CENTER,
                                         horizontal_alignment=CrossAxisAlignment.START,
@@ -177,7 +177,7 @@ class InfoCard(UserControl):
                 border_radius=10,
                 content=Row(
                     controls=[
-                        Text(self.__showing_title,size=20,weight=FontWeight.BOLD,font_family="Afacad"),
+                        Text(self.__showing_title,size=20,weight=FontWeight.BOLD,font_family="Afacad",color=TEXT_COLOUR),
                         Text("")
                     ],
                     alignment=MainAxisAlignment.START,

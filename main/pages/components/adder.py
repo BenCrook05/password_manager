@@ -97,7 +97,7 @@ class PasswordAdder(UserControl):
         )
         self.__title_input = Input("TITLE_ROUNDED","Title")
         self.__url_input = Input("CAST_CONNECTED_ROUNDED","URL",max_length=128)
-        self.__username = Input("PERSON_ROUNDED","Username",max_length=64)
+        self.__username = Input("PERSON_ROUNDED","Username",max_length=64, value = self.__homepage.get_manager().get_email())
         self.__password = Input("LOCK_ROUNDED","Password",hide=True,reveal_option=True)
         self.__additional_info = Input("INFO_ROUNDED","Additional Info",max_length=256)
 

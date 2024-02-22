@@ -112,7 +112,7 @@ class Sharer(UserControl):
             Row(
                 controls=[
                     VerticalDivider(color="transparent", width=100),
-                    Text("Allow User to make changes?"),
+                    Text("Allow User to make changes?",color=TEXT_COLOUR),
                     self.__manager_checkbox,
                     VerticalDivider(color="transparent", width=100),
                 ],
