@@ -185,20 +185,12 @@ class Newaccount(UserControl):
             )
             self.__container_passwords = Container(
                 padding=30,
-                bgcolor=BACKGROUND_COLOUR,
+                bgcolor=BACKGROUND_COLOUR_2,
                 blur=0,
                 border_radius=10,
                 content=Column(
                     horizontal_alignment=CrossAxisAlignment.CENTER,
                     controls=[
-                        Row(
-                            controls=[
-                                IconButton(icon=icons.ARROW_BACK_IOS_NEW, on_click=lambda: self.__page.go('/Newaccount')),
-                                VerticalDivider(width=10, color="transparent"),
-                            ],
-                            alignment=MainAxisAlignment.SPACE_BETWEEN,
-                            vertical_alignment=CrossAxisAlignment.CENTER,  
-                        ),
                         Divider(height=20, color="transparent"),
                         Column(
                             controls=[
@@ -217,7 +209,7 @@ class Newaccount(UserControl):
                             controls = [
                                 Text(value="Create a Password",size=23, weight=FontWeight.BOLD, color=TEXT_COLOUR),
                                 Divider(height=5, color="transparent"),
-                                Text(value=f"You won't ever be able to reset this password,\nso make sure you remember it!", 
+                                Text(value=f"You won't ever be able to reset this password,\n         so make sure you remember it!", 
                                         size=13,color=TEXT_COLOUR),
                             ]
                         ),
@@ -232,6 +224,7 @@ class Newaccount(UserControl):
             )
             self.__stack.controls.clear()
             self.__stack.controls.append(self.__container_passwords)
+            self.__stack.controls.append(self.__back_button)
             self.__stack.update()
             self.__processing = False
 
@@ -267,7 +260,7 @@ class Newaccount(UserControl):
                     Column(
                         controls=[
                             Image(
-                                r"gui\assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
+                                r"assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
                                 width=300, 
                                 fit=ImageFit.CONTAIN,
                             )

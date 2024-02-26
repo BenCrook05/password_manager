@@ -58,10 +58,6 @@ class Viewer(UserControl):
             on_click=lambda _: self._homepage.set_lockdown(self._passID,self._type), 
             icon_color="red"
         )
-        self._delete_divider = Divider(
-            height=50,
-            color="transparent"
-        )
         self._delete_button = ElevatedButton(
             icon=icons.DELETE,
             text="Delete",
@@ -101,7 +97,7 @@ class Viewer(UserControl):
             ),
             Divider(height=10,color="transparent"),
             self._col,
-            self._delete_divider,
+            Divider(height=50,color="transparent"),
             Row(
                 controls=[
                     self._delete_button,

@@ -58,10 +58,15 @@ class Home(UserControl):
         
     def __setup(self):
         try:
-            self.__email = self.__data["email"] #will fail when first run from view due to no data
+            if self.__page.route != "/Home":
+                raise ValueError
+            self.__email = self.__data["email"]#will fail when first run from view due to no data
             self.__password = self.__data["password"]
+            print("setup started")
             self.__on_home = True
-
+            if self.__email == "" or self.__password == "":
+                print("no email or password")
+                raise ValueError
             try:
                 server_public_key = self.__data["server_public_key"]
                 session_key = self.__data["session_key"]

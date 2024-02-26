@@ -434,7 +434,18 @@ def create_new_device(data):
         else:
             hasher = PasswordHasher()
             try:
-                hasher.verify(db_password_hash, password.encode('utf-8'))
+                curs.execute(f"SELECT LoginAttempts FROM Users WHERE UserID='{temp_UserID}'")
+                temp_login_attempts = curs.fetchone()[0]
+                curs.execute(f"SELECT FailedAttemptDate FROM Users WHERE UserID='{temp_UserID}'")
+                temp_failed_attempt_date = curs.fetchone()[0]
+                temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
+                if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
+                    if temp_login_attempts >= 3: #failed third attempt within last hour, regardless of device
+                        write_errors("TOO MANY ATTEMPTS","Add new device")
+                        curs.close()
+                        db.close()
+                        return "TOO MANY ATTEMPTS"
+                hasher.verify(password, db_password_hash.encode('utf-8'))
                 new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
                 curs.execute(f"UPDATE Users SET NewDeviceCode='{new_device_code}' WHERE UserID='{temp_UserID}'")
                 curs.close()
@@ -443,6 +454,7 @@ def create_new_device(data):
                 send_email(f"SecureNet: Authenticated New Device. Code: {new_device_code}", "Enter code into application", client_email)
                 return "CODE SENT"
             except:
+                write_errors(traceback.format_exc(), "Creating new device: failed match")   
                 increase_login_attempts(client_email)
                 return "UNAUTHENTICATED"
     except Exception as e:
@@ -520,20 +532,36 @@ def authenticate_password(data):
                     break
             if not matching_mac_address:
                 raise ValueError
-            curs.close()
-            db.close()
             hasher = PasswordHasher()
             try:
                 hasher.verify(password, db_password_hash.encode('utf-8')) #causes error if no match
+                db = connect_to_db()
+                curs = db.cursor()
+                curs.execute(f"UPDATE Users SET LoginAttempts=0 WHERE UserID='{temp_UserID}'")
+                curs.close()
+                db.commit()
+                db.close()
                 return new_session_key(temp_DeviceID)
             except Exception as e:  #catch error and increase login attempts due to incorrect password
                 send_email("SecureNet: Attempted Login", "An attempt was made to login to your account. If this wasn't you, login to secure your account", client_email)
                 increase_login_attempts(client_email)
+                #check whether account has been locked to return correct message
+                curs.execute(f"SELECT LoginAttempts FROM Users WHERE UserID='{temp_UserID}'")
+                temp_login_attempts = curs.fetchone()[0]
+                curs.execute(f"SELECT FailedAttemptDate FROM Users WHERE UserID='{temp_UserID}'")
+                temp_failed_attempt_date = curs.fetchone()[0]
+                temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
+                if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
+                    if temp_login_attempts == 3: #failed third attempt within last hour, regardless of device
+                        write_errors("TOO MANY ATTEMPTS","Full authentication")
+                        curs.close()
+                        db.close()
+                        return "TOO MANY ATTEMPTS"
+                curs.close()
+                db.close()
                 return "UNAUTHENTICATED"
         except Exception as e:
             write_errors(traceback.format_exc(),"Authenticating password")
-            curs.close()
-            db.close()
             return "UNAUTHENTICATED"
 
     except Exception as e:
@@ -688,7 +716,9 @@ def reset_client_password(data):
             db = connect_to_db()
             curs = db.cursor()
             #verify user knows their raw password
-            curs.execute(f"SELECT PasswordHash FROM Users WHERE Email='{client_email}'")
+            curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
+            temp_UserID = curs.fetchone()[0]
+            curs.execute(f"SELECT PasswordHash FROM Users WHERE UserID='{temp_UserID}'")
             original_password_hash = curs.fetchone()[0]
             original_password_hash = Encryption.decrypt_from_db(original_password_hash)
             try:
@@ -696,9 +726,7 @@ def reset_client_password(data):
                 original_password_hash = "$argon2id$v=19$m=65536,t=2,p=4" + original_password_hash
                 if hasher.verify(original_password_hash.encode('utf-8'), raw_password.encode('utf-8')):
                     new_password_hash = Encryption.encrypt_for_db(new_password_hash)
-                    curs.execute(f"UPDATE Users SET PasswordHash='{new_password_hash}' WHERE Email='{client_email}'")
-                    curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
-                    temp_UserID = curs.fetchone()[0]
+                    curs.execute(f"UPDATE Users SET PasswordHash='{new_password_hash}' WHERE UserID='{temp_UserID}'")
                     for passID, password_key in new_password_keys.items():
                         password_key = Encryption.encrypt_for_db(password_key)
                         curs.execute(f"UPDATE PasswordKeys SET PasswordKey='{password_key}' WHERE PassID='{passID}' AND UserID='{temp_UserID}'")
@@ -1403,29 +1431,6 @@ def receive_data():
 
             elif header == "update_public_keys":
                 data_to_return = Encryption.reset_client_sharing_keys(data)
-
-
-
-
-            ### HARD RESET ONLY FOR TESTING
-            elif header == "reset":
-                try:
-                    db = connect_to_db()
-                    curs = db.cursor()
-                    #print("resetting")
-                    curs.execute("DELETE FROM PendingPasswords")
-                    curs.execute("DELETE FROM Sessions")
-                    curs.execute("DELETE FROM PasswordKeys")
-                    curs.execute("DELETE FROM Passwords")
-                    curs.execute("DELETE FROM Devices")
-                    curs.execute("DELETE FROM Users")
-                    curs.close()
-                    db.commit()
-                    db.close()
-                    data_to_return = ""
-                except Exception as e:
-                    write_errors(traceback.format_exc(),"Resetting")
-                    data_to_return = ["FAILED",traceback.format_exc()]
                     
             flag = "encryption success"
             

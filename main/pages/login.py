@@ -9,6 +9,7 @@ from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 import traceback
 import socket
+from datetime import datetime
 
 class Login(UserControl):
     def __init__(self,page,data):
@@ -16,6 +17,7 @@ class Login(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
+    
 
     def attempt_auto_login(self):
         self.__stack.controls.append(ProRing())
@@ -49,6 +51,7 @@ class Login(UserControl):
                 self.__page.go('/Home')
             else:
                 self.__data["server_public_key"] = Application.get_server_key()
+                self.__data["server_key_day"] = datetime.now().day
                 raise ValueError
             
         except Exception as e:

@@ -16,16 +16,8 @@ class Newdevice(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
-
-
-    def __close_dlg(self,e):
-        self.__password_input.set_value("")
-        self.__dlg.open = False
-        self.__page.update()
     
     def __return_to_login(self,e):
-        self.__data["email"] = self.__email_input.get_value()
-        self.__data["password"] = self.__password_input.get_value()
         self.__page.go('/')
         
 
@@ -94,7 +86,7 @@ class Newdevice(UserControl):
     def build(self):
         self.__back_button = Container(
             padding=5,
-            content=IconButton(icon = icons.ARROW_BACK_IOS_NEW_ROUNDED, on_click=lambda _: self.__page.go('/'))
+            content=IconButton(icon = icons.ARROW_BACK_IOS_NEW_ROUNDED, on_click=self.__return_to_login)
         )
         self.__email_input = Input("PERSON_ROUNDED","Email",focus=True)
         self.__password_input = Input("LOCK_OPEN_ROUNDED","Password",True,reveal_option=True)

@@ -9,6 +9,7 @@ from backEnd.encryption import Encrypt, Decrypt, Generate
 from backEnd.AsymmetricEncryption.endToEnd_encryption import AsyncRSA as rsa
 from backEnd.hasher import Hash
 from backEnd.scan import PasswordChecker, PasswordGenerator
+from backEnd.loginlogic import Application
 import random
 import re
 from threading import Thread
@@ -247,6 +248,10 @@ class Manager():
             password_list = list(map(lambda x: [x[4],x[1]], password_list))
             csv_file = "passwords.csv"
             #create a path to the downloads directory
+            #removes passwords without a url (infos) 
+            for password in password_list:
+                if password[0] == "":
+                    password.remove(password)
             downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
             csv_file_path = os.path.join(downloads_dir, csv_file)
             #deletes password.csv if already exists
@@ -552,7 +557,12 @@ class Manager():
         if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.reset_client_password(new_password,iterations=1)
-        if data == "RESET":
+        if data == "RESET PASSWORD":
             #will automatically logout after this
+            #resave data if autologin is enabled
+            login_data_is_saved = Application.attempt_get_saved_data()
+            Application.delete_saved_login_data()
+            if login_data_is_saved:
+                Application.save_login_data(self.__email, new_password)
             return data
         

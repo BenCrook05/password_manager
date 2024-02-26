@@ -8,7 +8,7 @@ import socket
 
 
 class Input(UserControl):
-    def __init__(self, icon_name, hint, hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32,width=300):
+    def __init__(self, icon_name, hint, hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32,width=300,default_value=""):
         super().__init__()
         self.__icon_name = icon_name
         self.__hint = hint
@@ -18,6 +18,7 @@ class Input(UserControl):
         self.__reveal_button = reveal_option
         self.__max_length = max_length
         self.__width = width
+        self.__default_value = default_value
         
     
     def set_error_text(self, text):
@@ -139,6 +140,8 @@ class Input(UserControl):
             read_only=False,
             error_style=TextStyle(size=9),
         )
+        if self.__default_value != "":
+            self.__textfield.value = self.__default_value
         if self.__hint == "Date of Birth":
             self.__textfield.hint_text += " (dd-mm-yyyy)"
 

@@ -76,32 +76,50 @@ class Application:
     def login(email,password,datadic):
         try:
             server_public_key = datadic["server_public_key"]
+            if datadic["server_key_day"] != datetime.now().day:
+                raise Exception("Server key out of date")
         except Exception as e:
             #stores public key in shared dictionary to reduce the number of requests required
             server_public_key = Application.get_server_key()
             datadic["server_public_key"] = server_public_key
+            datadic["server_key_day"] = datetime.now().day
         #first creates hash of password using constant salt
         #then generates hash of the initial hash using a random salt 
         #second hash is sent to server for comparison
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
+        print(f"stored_password_hash: {stored_password_hash}")
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
         data = pr.authenticate_password(server_public_key,email,mac_address_hash,comparitive_password_hash)
         return data
     
     @staticmethod
     def login_new_device_request(email,password,datadic):
-        server_public_key = Application.get_server_key()
-        datadic["server_public_key"] = server_public_key
+        try:
+            server_public_key = datadic["server_public_key"]
+            if datadic["server_key_day"] != datetime.now().day:
+                raise Exception("Server key out of date")
+        except Exception as e:
+            server_public_key = Application.get_server_key()
+            datadic["server_public_key"] = server_public_key
+            datadic["server_key_day"] = datetime.now().day
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
+        print(f"stored_password_hash: {stored_password_hash}")
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
         data = pr.add_new_device_request(server_public_key,email,mac_address_hash,comparitive_password_hash)
         return data
        
     @staticmethod 
     def login_new_device_confirm(email,code, datadic):
-        server_public_key = datadic["server_public_key"]
+        try:
+            server_public_key = datadic["server_public_key"]
+            if datadic["server_key_day"] != datetime.now().day:
+                raise Exception("Server key out of date")
+        except Exception as e:
+            server_public_key = Application.get_server_key()
+            datadic["server_public_key"] = server_public_key
+            datadic["server_key_day"] = datetime.now().day
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
         data = pr.confirm_device_code(server_public_key,email,mac_address_hash,code)
         return data
@@ -113,8 +131,14 @@ class Application:
             mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
             stored_password_hash = Hash.create_hash(password.encode('utf-8'), salt_type=email)
             permanent_public_key = "place-holder"  #immediately replaced by Manager 
-            server_public_key = Application.get_server_key()
-            datadic["server_public_key"] = server_public_key
+            try:
+                server_public_key = datadic["server_public_key"]
+                if datadic["server_key_day"] != datetime.now().day:
+                    raise Exception("Server key out of date")
+            except Exception as e:
+                server_public_key = Application.get_server_key()
+                datadic["server_public_key"] = server_public_key
+                datadic["server_key_day"] = datetime.now().day
             data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
             return data
         else:
@@ -123,7 +147,14 @@ class Application:
     @staticmethod
     def validate_new_account(email,code,datadic):
         mac_address_hash = Hash.create_hash(str(uuid.getnode()).encode("utf-8"), "default")
-        server_public_key = datadic["server_public_key"]
+        try:
+            server_public_key = datadic["server_public_key"]
+            if datadic["server_key_day"] != datetime.now().day:
+                raise Exception("Server key out of date")
+        except Exception as e:
+            server_public_key = Application.get_server_key()
+            datadic["server_public_key"] = server_public_key
+            datadic["server_key_day"] = datetime.now().day
         data = pr.confirm_new_user(server_public_key,email,mac_address_hash,code)
         return data
         

@@ -77,22 +77,24 @@ class Settings(UserControl):
             self.__processing = True
             self.__stack.controls.append(ProRing())
             self.__stack.update()               
-            new_password_value = self.__current_password_input.get_value()
-            if self.__homepage.get_manager().validate_client_password(new_password_value):
+            current_password_value = self.__current_password_input.get_value()
+            new_password_value = self.__new_password_input.get_value()
+            if self.__homepage.get_manager().validate_client_password(current_password_value):
                 #checks password is strong enough before changing
-                if self.__new_password_input.get_value() != "" and Application.check_password_is_suitable(new_password_value):
-                    self.__homepage.get_manager().reset_client_password(new_password_value)
-                    self.__homepage.get_page().snack_bar = SnackBar(
-                        content=Text("Password reset, please login again using your new password",color=TEXT_COLOUR),
-                        bgcolor=BACKGROUND_COLOUR_2,
-                        elevation=5,
-                        margin=5,
-                        duration=3000,
-                    )
-                    self.__homepage.get_page().snack_bar.open = True
-                    self.__homepage.get_page().update()
-                    #logout at this point to reset the password fully
-                    self.__homepage.logout()
+                if new_password_value != "" and Application.check_password_is_suitable(new_password_value):
+                    data = self.__homepage.get_manager().reset_client_password(new_password_value)
+                    if data == "RESET PASSWORD":
+                        self.__homepage.get_page().snack_bar = SnackBar(
+                            content=Text("Password reset, please login again using your new password",color=TEXT_COLOUR),
+                            bgcolor=BACKGROUND_COLOUR_2,
+                            elevation=5,
+                            margin=5,
+                            duration=3000,
+                        )
+                        self.__homepage.get_page().snack_bar.open = True
+                        self.__homepage.get_page().update()
+                        #logout at this point to reset the password fully and reset sharing keys
+                        self.__homepage.get_page().go('/')
                 else:
                     self.__homepage.get_page().snack_bar = SnackBar(
                         content=Text("Please enter a suitably strong new password",color=TEXT_COLOUR),
@@ -127,9 +129,12 @@ class Settings(UserControl):
                 )
                 self.__homepage.get_page().snack_bar.open = True
                 self.__homepage.get_page().update()
-            self.__stack.controls.pop()
-            self.__stack.update()
-            self.__processing = False
+            try: #could fail if already redirected to login page
+                self.__stack.controls.pop()
+                self.__stack.update()
+                self.__processing = False
+            except:
+                pass
     
     def build(self):
         self.__back_button = IconButton(icon=icons.ARROW_BACK,on_click=self.__back)

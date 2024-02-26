@@ -25,7 +25,7 @@ class NavSideRail(UserControl):
                 height=self.__height,
                 selected_index=0,
                 label_type="all",
-                group_alignment=-0.9,
+                group_alignment=-1,
                 destinations=[
                     NavigationRailDestination(
                         icon=icons.HOME_OUTLINED,

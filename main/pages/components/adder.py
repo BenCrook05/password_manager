@@ -1,5 +1,6 @@
 from flet import *
 from pages.components.inputs import Input
+from pages.components.pro_ring import ProRing
 from assets.colours import Colours
 
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
@@ -14,6 +15,8 @@ class PasswordAdder(UserControl):
         
     def __add_password(self,e):
         if not self.__processing:
+            self.__stack.controls.append(ProRing())
+            self.__stack.update()
             self.__processing = True
             title = self.__title_input.get_value()
             url = self.__url_input.get_value()
@@ -47,6 +50,8 @@ class PasswordAdder(UserControl):
                 margin=5,
                 duration=3000,
             )
+            self.__stack.controls.pop()
+            self.__stack.update()
             self.__processing = False
             self.__homepage.get_page().snack_bar.open = True
             self.__homepage.get_page().update()
@@ -97,7 +102,7 @@ class PasswordAdder(UserControl):
         )
         self.__title_input = Input("TITLE_ROUNDED","Title")
         self.__url_input = Input("CAST_CONNECTED_ROUNDED","URL",max_length=128)
-        self.__username = Input("PERSON_ROUNDED","Username",max_length=64, value = self.__homepage.get_manager().get_email())
+        self.__username = Input("PERSON_ROUNDED","Username",max_length=64, default_value=self.__homepage.get_manager().get_email())
         self.__password = Input("LOCK_ROUNDED","Password",hide=True,reveal_option=True)
         self.__additional_info = Input("INFO_ROUNDED","Additional Info",max_length=256)
 
@@ -150,4 +155,11 @@ class PasswordAdder(UserControl):
             alignment=MainAxisAlignment.START,
             horizontal_alignment=CrossAxisAlignment.CENTER,
         )
-        return self.__col
+        self.__stack = Stack(
+            controls=[
+                self.__col
+            ],
+            alignment=MainAxisAlignment.CENTER,
+            vertical_alignment=CrossAxisAlignment.CENTER,
+        )
+        return self.__stack
