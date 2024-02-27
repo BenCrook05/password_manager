@@ -106,7 +106,7 @@ class Settings(UserControl):
                     self.__homepage.get_page().snack_bar.open = True
                     self.__homepage.get_page().update()
                 
-            elif not (self.__homepage.get_manager().validate_client_password(self.__current_password_input.get_value())) and self.__current_password_input.get_value() != "":
+            elif not (self.__homepage.get_manager().validate_client_password(current_password_value)) and current_password_value != "":
                 self.__homepage.get_page().snack_bar = SnackBar(
                     content=Text("Incorrect current password",color=TEXT_COLOUR),
                     bgcolor=BACKGROUND_COLOUR_2,
