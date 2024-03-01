@@ -15,6 +15,27 @@ class Newaccount(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
+        self.__first_name = ""
+        self.__last_name = ""
+        self.__email = ""
+        self.__date_of_birth = ""
+        self.__phone_number = ""
+        self.__country = ""
+        self.__back_button = IconButton()
+        self.__first_name_input = Input()
+        self.__last_name_input = Input()
+        self.__email_input = Input()
+        self.__date_of_birth_input = Input()
+        self.__phone_number_input = Input()
+        self.__country_input = CountryInput()
+        self.__confirm_button = ElevatedButton()
+        self.__container_info = Container()
+        self.__stack = Stack()
+        self.__card = Card()
+        self.__password_input = Input()
+        self.__confirm_password_input = Input()
+        self.__confirm_button_passwords = ElevatedButton()
+        self.__container_passwords = Container()
 
     def __try_again(self):
         self.__first_name_input.change_disabled()

@@ -135,11 +135,12 @@ class PyAnyWhereRequests:
             
             
     @staticmethod
-    def get_password_overview(server_public_key, session_key, client_email):
+    def get_password_overview(server_public_key, session_key, client_email, include_detail):
         client_public_key, client_private_key, symmetric_key, encrypted_symmetric_key = PyAnyWhereRequests.create_encryption_keys(server_public_key)
         data = {
             "session_key": session_key,
             "client_email": client_email,
+            "include_details": include_detail, #if true, returns all password data, if false, returns only basic information
             "error_check": Generate.create_error_check(),
         }
         encrypted_data = Encrypt.encrypt_data_to_server(data, symmetric_key)
@@ -148,7 +149,7 @@ class PyAnyWhereRequests:
             formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
             return formated_data
         except Exception as e:
-            return PyAnyWhereRequests.get_password_overview(server_public_key, session_key, client_email)
+            return PyAnyWhereRequests.get_password_overview(server_public_key, session_key, client_email, include_detail)
             
     @staticmethod
     def get_username(server_public_key, session_key, client_email, passID):

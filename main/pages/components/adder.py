@@ -12,6 +12,17 @@ class PasswordAdder(UserControl):
         self.__homepage = homepage
         self.__current_state = "password"
         self.__processing = False 
+        self.__back_button = IconButton()
+        self.__switch_button = ElevatedButton()
+        self.__confirm_buton = ElevatedButton()
+        self.__title_input = Input()
+        self.__url_input = Input()
+        self.__username = Input()
+        self.__password = Input()
+        self.__additional_info = Input()
+        self.__generate_password_button = ElevatedButton()
+        self.__col = Column()
+        self.__stack = Stack()
         
     def __add_password(self,e):
         if not self.__processing:
@@ -159,7 +170,5 @@ class PasswordAdder(UserControl):
             controls=[
                 self.__col
             ],
-            alignment=MainAxisAlignment.CENTER,
-            vertical_alignment=CrossAxisAlignment.CENTER,
         )
         return self.__stack

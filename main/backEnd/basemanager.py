@@ -175,7 +175,7 @@ class Manager():
         #stores as list of password objects
         self.__passwords = []
         self.__scanned_passwords = None
-        password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email)
+        password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email,True)
         if password_data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.import_passwords(iterations=1) 
@@ -411,7 +411,7 @@ class Manager():
     def remove_password_user(self, passID, user_email, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.remove_password_user(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key, user_emai=user_email)
+                data = password.remove_password_user(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key, user_email=user_email)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.remove_password_user(passID,iterations=1)

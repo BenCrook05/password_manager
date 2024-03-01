@@ -8,7 +8,7 @@ import socket
 
 
 class Input(UserControl):
-    def __init__(self, icon_name, hint, hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32,width=300,default_value=""):
+    def __init__(self, icon_name="PERSON",hint="",hide=False,on_press_function=None,focus=False,reveal_option=False,max_length=32,width=300,default_value=""):
         super().__init__()
         self.__icon_name = icon_name
         self.__hint = hint
@@ -19,6 +19,9 @@ class Input(UserControl):
         self.__max_length = max_length
         self.__width = width
         self.__default_value = default_value
+        self.__textfield = TextField()
+        self.__container = Container()
+        
         
     
     def set_error_text(self, text):
@@ -168,6 +171,8 @@ class Input(UserControl):
 class CountryInput(UserControl):
     def __init__(self):
         super().__init__()
+        self.__dropdown = Dropdown()
+    
     
     def set_error_text(self, text):
         self.__dropdown.error_text = text

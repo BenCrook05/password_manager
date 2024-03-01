@@ -20,6 +20,14 @@ class Viewer(UserControl):
         self._visibility_icon = IconButton(icons.VISIBILITY_OFF,icon_size=25,on_click=self._unhide_password_viewing)
         self._manager_checkbox = Checkbox(value = True if self._current_manager == 1 else False,disabled=False,on_change=self._return_to_on)
         self._help_button = IconButton(icons.HELP_OUTLINE_ROUNDED,icon_size=25,on_click=self._homepage.help)
+        self._col = Column()
+        self._img = Icon()
+        self._container_col = Column()
+        self._share_button = ElevatedButton()
+        self._edit_button = ElevatedButton()
+        self._set_lockdown_button = IconButton()
+        self._delete_button = ElevatedButton()
+        self._manage_users_button = ElevatedButton()
 
     def _unhide_password_viewing(self,e):
         if self._current_password_viewing.content.value == ' '.join(['•'] * len(self._current_password)):
@@ -116,6 +124,8 @@ class PasswordViewer(Viewer):
         self.__current_username = username
         self.__url = url
         self.__current_additional_info = additional_info
+        self.__col = Column()
+        self.__img = Image()
         
     def build(self):
         self._col = Column(
@@ -232,6 +242,8 @@ class InfoViewer(Viewer):
     def __init__(self, homepage, title, passID, password, manager):
         super().__init__(homepage, passID, password, manager, type="info")
         self.__current_title = title
+        self.__col = Column()
+        self.__img = Icon()
    
     def build(self):
         self._col = Column(

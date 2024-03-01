@@ -15,6 +15,15 @@ class ViewUsers(UserControl):
         self.__passID = passID
         self.__type = type
         self.__processing = False
+        self.__back_button = IconButton()
+        self.__managers_container = Container()
+        self.__users_container = Container()
+        self.__new_manager_text_field = Input()
+        self.__remove_user_text_field = Input()
+        self.__img = Icon()
+        self.__col = Column()
+        self.__stack = Stack()
+
 
     def __back(self,e):
         self.__homepage.view_password(None,self.__passID,self.__type)
@@ -45,7 +54,7 @@ class ViewUsers(UserControl):
             self.__processing = False
             
     def __remove_user(self,e):
-        user_email = self.__remove_user_text_field.value
+        user_email = self.__remove_user_text_field.get_value()
         if user_email == "":
             return
         if not self.__processing:

@@ -155,7 +155,9 @@ class Generate:
     
     @staticmethod
     def generate_fernet(extra=""):
-        ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
+        #TODO
+        ADDED_STRING = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
+        # ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
         ADDED_STRING += extra
         #only 50 characters required for corrent Fernet encryption
         ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters

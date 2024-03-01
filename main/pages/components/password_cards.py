@@ -30,7 +30,10 @@ class PasswordCard(UserControl):
         self.__passID = passID
         self.__username = username
         self.__url = url
-        self.__img = None
+        self.__img = Image()
+        self.__showing_title = ""
+        self.__showing_username = ""
+        self.__card = Card()
     
     def get_title(self):
         return self.__title
@@ -148,6 +151,9 @@ class InfoCard(UserControl):
         self.__homepage = homepage
         self.__title = title
         self.__passID = passID
+        self.__showing_title = ""
+        self.__card = Card()
+        self.__img = Icon()
         
     def get_title(self):
         return self.__title

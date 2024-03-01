@@ -14,6 +14,21 @@ class Updater(UserControl):
         self.__passID = passID
         self.__type = type
         self.__processing = False
+        self.__password = ""
+        self.__title = ""
+        self.__username = ""
+        self.__url = ""
+        self.__additional_info = ""
+        self.__img = Image()
+        self.__title_input_field = TextField()
+        self.__password_input_field = TextField()
+        self.__username_input_field = TextField()
+        self.__url_input_field = TextField()
+        self.__additional_info_input_field = TextField()
+        self.__back_button = IconButton()
+        self.__update_button = ElevatedButton()
+        self.__col = Column()
+        
         
     def __update(self,e):
         if not self.__processing:

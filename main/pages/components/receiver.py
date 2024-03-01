@@ -13,6 +13,9 @@ class NewPassword(UserControl):
         self.__sender_name = sender_name
         self.__sender_surname = sender_surname
         self.__homepage = homepage
+        self.__check_box = Checkbox()
+        self.__delete_button = IconButton()
+        self.__row = Row()
         
     def attempt_confirm(self):
         if self.__check_box.value == True:
@@ -73,6 +76,9 @@ class ReceiveShared(UserControl):
         self.__data = data
         self.__processing = False
         self.__receiving_password_list = []
+        self.__back_button = IconButton()
+        self.__col = Column()
+        self.__stack = Stack()
         
          
     def __select_all(self,e):
@@ -96,9 +102,7 @@ class ReceiveShared(UserControl):
             )
             self.__homepage.get_page().snack_bar.open = True
             self.__homepage.get_page().update()
-            self.__homepage.get_navrail().set_selected_index(0)
-            self.__homepage.get_navrail().get_nav().update()
-            self.__homepage.refresh()
+            self.__back()
             
     
     def __back(self,e):
@@ -121,20 +125,9 @@ class ReceiveShared(UserControl):
         )
         
         data = self.__homepage.get_manager().get_pending_shares()
-        
+
         if data == "NO PENDING PASSWORDS" or type(data) != list:
-            self.__homepage.get_page().snack_bar = SnackBar(
-                content=Text("No passwords have been shared with you",color=TEXT_COLOUR),
-                bgcolor=BACKGROUND_COLOUR_2,
-                elevation=5,
-                margin=5,
-                duration=3000,
-            )
-            self.__homepage.get_page().snack_bar.open = True
-            self.__homepage.get_page().update()
-            self.__homepage.get_navrail().set_selected_index(0)
-            self.__homepage.get_navrail().get_nav().update()
-            self.__homepage.destination_change(None)
+            raise Exception("No pending passwords")
         else:
             self.__col.controls = self.__col.controls[:4]
             self.__col.controls.extend([

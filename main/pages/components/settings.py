@@ -14,6 +14,14 @@ class Settings(UserControl):
         self.__homepage = homepage
         self.__data = data
         self.__processing = False
+        self.__back_button = IconButton()
+        self.__thememode_switch = Switch()
+        self.__current_password_input = Input()
+        self.__new_password_input = Input()
+        self.__lockdown_switch = Switch()
+        self.__col = Column()
+        self.__stack = Stack()
+        self.__start_mode = None
         
     def __back(self,e):
         self.__homepage.get_navrail().set_selected_index(0)

@@ -17,6 +17,15 @@ class Login(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
+        self.__email_input = Input()
+        self.__password_input = Input()
+        self.__stay_signed_in = False
+        self.__sign_in_button = Checkbox()
+        self.__login_success = Text()
+        self.__container_info = Container()
+        self.__stack = Stack()
+        self.__card = Card()
+        
     
 
     def attempt_auto_login(self):

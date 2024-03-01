@@ -20,6 +20,11 @@ class PasswordRow(UserControl):
         else:
             self.__type = "password"
         self.__url = url
+        self.__slider = Slider()
+        self.__repeated_alert = Text()
+        self.__img = Image()
+        self.__container = Container()
+        
             
     def get_type(self):
         return self.__type
@@ -113,6 +118,11 @@ class Scanner(UserControl):
         super().__init__()
         self.__homepage = homepage
         self.__data = data
+        self.__back_button = IconButton()
+        self.__col = Column()
+        self.__stack = Stack()
+        self.__password_row_list = []
+        self.__rating_container = Column()
     
     def __view_password(self,passID,type):
         self.__homepage.view_password(None,passID,type)

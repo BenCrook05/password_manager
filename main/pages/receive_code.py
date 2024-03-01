@@ -16,6 +16,12 @@ class Receivecode(UserControl):
             self.__function = self.__attempt_verify_account
         elif type == "device":
             self.__function = self.__attempt_add_device
+        self.__back_button = IconButton()
+        self.__code_input = TextField()
+        self.__send_code_button = ElevatedButton()
+        self.__container_info = Container()
+        self.__stack = Stack()
+        self.__card = Card()
         
     def __check_data(self, e):
         values = self.__code_input.value

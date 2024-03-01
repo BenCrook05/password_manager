@@ -15,6 +15,12 @@ class Deleter(UserControl):
         self.__type = type
         self.__manager = manager
         self.__processing = False
+        self.__back_button = IconButton()
+        self.__delete_button = ElevatedButton()
+        self.__delete_instance_button = ElevatedButton()
+        self.__new_manager_email_input = Input()
+        self.__col = Column()
+        self.__stack = Stack()
         
     def __back(self,e):
         self.__homepage.view_password(None,self.__passID,self.__type)
@@ -26,10 +32,11 @@ class Deleter(UserControl):
             self.__stack.update()
             try:
                 new_manager_email = self.__new_manager_email_input.get_value()
+                if new_manager_email == "":
+                    raise Exception("New manager email required")
                 if new_manager_email != self.__data["email"]:
                     data = self.__homepage.get_manager().delete_password_instance(self.__passID, new_manager_email)
-                    print(data)
-                    if data == "DELETED PASSWORD INSTANCE":
+                    if data == "DELETED PASSWORD INSTANCE and ADDED MANAGER":
                         self.__homepage.get_page().snack_bar = SnackBar(
                             content=Text("Password Instance Deleted",color=TEXT_COLOUR),
                             bgcolor=BACKGROUND_COLOUR_2,
@@ -56,7 +63,6 @@ class Deleter(UserControl):
                     self.__processing = False
             except Exception as e:
                 data = self.__homepage.get_manager().delete_password_instance(self.__passID)
-                print(data)
                 if data == "New manager email required":
                     self.__col.controls.insert(6,Text("New manager required or delete password entirely.", size=12, font_family="Afacad", color="red"))
                     self.__new_manager_email_input = Input(icons.EMAIL, hint="New Manager Email")
@@ -77,7 +83,6 @@ class Deleter(UserControl):
                     self.__homepage.get_page().update()
                     self.__homepage.refresh()
                 elif data == "NEED TO SHARE":
-                    print("need to share")
                     self.__homepage.get_page().snack_bar = SnackBar(
                         content=Text("Password must be already shared with new manager",color=TEXT_COLOUR),
                         bgcolor=BACKGROUND_COLOUR_2,
@@ -86,7 +91,7 @@ class Deleter(UserControl):
                     )
                     self.__homepage.get_page().snack_bar.open = True
                     self.__homepage.get_page().update()
-                    self.__homepage.view_password(None,self.__passID,self.__type)
+                    self.__homepage.share_password(self.__passID, self.__type)
                 else:
                     self.__homepage.get_page().snack_bar = SnackBar(
                         content=Text("Password deletion failed",color=TEXT_COLOUR),

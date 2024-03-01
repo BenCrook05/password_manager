@@ -29,6 +29,7 @@ def views_handler(page, data):
                 Home(page, data)
             ],
             padding=0,
+            spacing=0,
         ),
         '/Newdevice':View(
             route='/Newdevice',

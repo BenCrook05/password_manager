@@ -13,6 +13,8 @@ class Lockdown(UserControl):
         self.__passID = passID
         self.__type = type
         self.__processing = False
+        self.__back_button = IconButton()
+        self.__stack = Stack()
     
     def __set_to_lockdown(self,e):
         if not self.__processing:

@@ -617,6 +617,7 @@ def new_session_key(temp_deviceID):
 def get_password_overview(data):
     session_key=data["session_key"]
     client_email=data["client_email"]
+    include_details=data["include_details"]
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
@@ -636,14 +637,17 @@ def get_password_overview(data):
             db.close()
             for db_password in temp_passwords:
                 URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password = db_password 
-                PasswordKey = Encryption.decrypt_from_db(PasswordKey)
-                Password = Encryption.decrypt_from_db(Password)
-                data["passID"] = PassID  #add passID to data to request managers and users
-                users_list = get_password_users(data)
-                data["manager_only"] = True
-                managers_list = get_password_users(data)
-                passwords.append([URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list])
-                data["manager_only"] = False
+                if include_details:
+                    PasswordKey = Encryption.decrypt_from_db(PasswordKey)
+                    Password = Encryption.decrypt_from_db(Password)
+                    data["passID"] = PassID  #add passID to data to request managers and users
+                    users_list = get_password_users(data)
+                    data["manager_only"] = True
+                    managers_list = get_password_users(data)
+                    passwords.append([URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list])
+                    data["manager_only"] = False
+                else:
+                    passwords.append([URL, Title, Username, PassID, Manager])
             return passwords
         except Exception as e:
             write_errors(traceback.format_exc(),"Getting password overview")
@@ -1168,6 +1172,10 @@ def get_pending_passwordkeys(data):
                 else:
                     # if the pending password is over a month old, delete it
                     curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
+            curs.execute(f"SELECT PassID from PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+            remaining = True if len(curs.fetchall()) > 0 else False
+            if not remaining:
+                curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
             curs.close()
             db.commit()
             db.close()
@@ -1316,6 +1324,10 @@ def insert_pending_keys(data):
             
             elif accept == "Reject":
                 curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}' AND PassID='{passID}'")
+                curs.execute(f"SELECT PassID FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
+                pending = curs.fetchall()
+                if len(pending) == 0:
+                    curs.execute(f"UPDATE Users SET PendingDownload=0 WHERE UserID='{temp_UserID}'")
                 curs.close()
                 db.commit()
                 db.close()

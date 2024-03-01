@@ -16,6 +16,14 @@ class Newdevice(UserControl):
         self.__page = page
         self.__data = data
         self.__processing = False
+        self.__back_button = IconButton()
+        self.__email_input = Input()
+        self.__password_input = Input()
+        self.__send_code_button = ElevatedButton()
+        self.__login_success = Text()
+        self.__container_info = Container()
+        self.__stack = Stack()
+        self.__card = Card()
     
     def __return_to_login(self,e):
         self.__page.go('/')

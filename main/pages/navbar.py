@@ -11,6 +11,7 @@ class Navbar(UserControl):
         super().__init__()
         self.__page = page
         
+        
 
     def __close(self, e):
         # self.__page.window_visible = False

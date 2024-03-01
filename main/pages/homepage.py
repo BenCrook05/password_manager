@@ -38,21 +38,27 @@ class Home(UserControl):
         self.__passwords_hidden = False
         self.__infos_hidden = False
         self.__processing = False  #used to prevent multiple requests simultaneously
-        self.__email = None
-        self.__password = None
-        self.__current_passID = None
-        self.__current_password = None
-        self.__current_title = None
-        self.__current_username = None
-        self.__current_manager = None
-        self.__current_url = None
-        self.__current_additional_info = None
-        self.__navrail = None
-        self.__main_container = None
-        self.__password_list_container = None
-        self.__height = None
+        self.__email = ""
+        self.__password = ""
         self.__unable_to_logout = False
-        #other attributes created in build() don't need referencing before build() is called        
+        self.__current_passID = ""
+        self.__current_password = ""
+        self.__current_title = ""
+        self.__current_username = ""
+        self.__current_url = ""
+        self.__current_manager = 0
+        self.__current_additional_info = ""
+        self.__height = 0
+        self.__navrail = NavSideRail(self)
+        self.__raise_passwords_button = ElevatedButton()
+        self.__raise_infos_button = ElevatedButton()
+        self.__search_box = TextField()
+        self.__password_list_container = Container()
+        self.__initial_icon = Stack()
+        self.__main_container = Container()
+        self.__row = Row()
+        self.__top_column = Column()
+        self.__container_col = Column()
         self.__setup()
         
         
@@ -83,7 +89,6 @@ class Home(UserControl):
                     self.__page.go('/')
                 
                 
-            self.__manager.import_passwords()
             
         except Exception as e:
             pass
@@ -132,7 +137,7 @@ class Home(UserControl):
             self.refresh()
             self.__navrail.set_selected_index(0)
             self.__navrail.update()
-            self.__download_full_passwords()
+            self.run_background_tasks()
             
         elif self.__navrail.get_selected_index() == 2:
             self.__get_pending_passwords()
@@ -222,9 +227,24 @@ class Home(UserControl):
     def __get_pending_passwords(self):
         self.__main_container.content = ProRing()
         self.__main_container.update()
-        self.__main_container.content = ReceiveShared(self, self.__data)
-        self.__main_container.update()
-    
+        try:
+            self.__main_container.content = ReceiveShared(self, self.__data)
+            self.__main_container.update()
+        except Exception as e:
+            self.__page.snack_bar = SnackBar(
+                content=Text("No passwords have been shared with you",color=TEXT_COLOUR),
+                bgcolor=BACKGROUND_COLOUR_2,
+                elevation=5,
+                margin=5,
+                duration=3000,
+            )
+            self.__page.snack_bar.open = True
+            self.__page.update()
+            self.__navrail.set_selected_index(0)
+            self.__navrail.update()
+            self.destination_change(None)
+
+
     def set_lockdown(self,passID,type):
         self.__main_container.content = Lockdown(self,passID,type)
         self.__main_container.update()
@@ -337,11 +357,14 @@ class Home(UserControl):
         self.__info_list.sort(key=lambda x: x.get_title().lower())
         
     
-    def __initialise(self):
+    def initialise(self):
         if self.__on_home:
             try:
+                self.__manager.import_passwords()
                 self.__create_list()
                 self.__add_infos_passwords()
+                self.__password_list_container.content.controls.pop()
+                self.__password_list_container.update()
             except Exception as e:
                 pass
             
@@ -353,7 +376,7 @@ class Home(UserControl):
     def refresh(self):
         if not self.__processing:
             self.__processing = True
-            self.__password_list_container.content.controls.append(ProRing(255))
+            self.__password_list_container.content.controls.append(ProRing())
             self.__password_list_container.update()
             self.__navrail.set_selected_index(0)
             self.__search_box.value = ""
@@ -462,7 +485,14 @@ class Home(UserControl):
                         scroll=ScrollMode.AUTO,
                         controls=[
                             Divider(height=10,color="transparent"),
-                            self.__search_box,
+                            Row(
+                                spacing=5,
+                                controls=[
+                                    self.__search_box,
+                                ],
+                                alignment=MainAxisAlignment.CENTER,
+                                vertical_alignment=CrossAxisAlignment.CENTER,
+                            ),
                             Divider(height=10,color="transparent"),
                             self.__raise_passwords_button,
                             Divider(height=10,color="transparent"),
@@ -491,6 +521,7 @@ class Home(UserControl):
                         horizontal_alignment=CrossAxisAlignment.START,
                         alignment=MainAxisAlignment.END,
                     ),
+                    ProRing(),
                 ],
             ),
         )
@@ -557,7 +588,6 @@ class Home(UserControl):
             vertical_alignment=CrossAxisAlignment.START,
         )
         
-        self.__initialise()     
                
         self.__top_column = Column(
             controls=[

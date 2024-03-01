@@ -16,6 +16,25 @@ class Sharer(UserControl):
         self.__passID = passID
         self.__type = type
         self.__processing = False
+        self.__recipient_userID = ""
+        self.__recipient_forename = ""
+        self.__recipient_name = ""
+        self.__recipient_email = ""
+        self.__recipient_is_manager = 0
+        self.__user_input = Input()
+        self.__back_button = IconButton()
+        self.__find_user_button = ElevatedButton()
+        self.__col = Column()
+        self.__stack = Stack()
+        self.__confirm_button = ElevatedButton()
+        self.__return_button = ElevatedButton()
+        self.__forename_box = TextField()
+        self.__surname_box = TextField()
+        self.__email_box = TextField()
+        self.__confirm_send_button = ElevatedButton()
+        self.__manager_checkbox = Checkbox()
+        self.__final_confirm_button = ElevatedButton()
+        
 
     def __reset_user_boxes(self,e):
         self.__forename_box.value=self.__recipient_forename
@@ -41,7 +60,6 @@ class Sharer(UserControl):
                     self.__col.update()
                     self.__processing = False
                 else:
-                    print(data)
                     self.__recipient_userID, self.__recipient_forename, self.__recipient_name, self.__recipient_email = data
                     self.__col.controls = self.__col.controls[:4]  #remove unwanted controls from the column keeping the image and buttons
                     self.__confirm_button = ElevatedButton("Confirm", on_click=self.__confirm_access_rights)
