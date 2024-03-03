@@ -5,7 +5,7 @@ import random
 import time
 
 class PassInfo:
-    def __init__(self, passID, title, manager, password, password_key, password_users, password_managers):
+    def __init__(self, passID, title, manager, password = None, password_key = None, password_users = None, password_managers = None):
         self._passID = str(passID) #protected not private so can be accessed by child class
         self._title = title
         self._password_key = password_key
@@ -174,7 +174,7 @@ class PassInfo:
             return data
 
 class Info(PassInfo):
-    def __init__(self, passID, title, manager, password, password_key, password_users, password_managers):
+    def __init__(self, passID, title, manager, password = None, password_key = None, password_users = None, password_managers = None):
         super().__init__(passID, title, manager, password, password_key, password_users, password_managers)
         
     def get_summary(self):
@@ -206,7 +206,7 @@ class Info(PassInfo):
     
     
 class Password(PassInfo):
-    def __init__(self, passID, title, url, username, manager, password, password_key, additional_info, password_users, password_managers):
+    def __init__(self, passID, title, url, username, manager, password = None, password_key = None, additional_info = None, password_users = None, password_managers = None):
         super().__init__(passID, title, manager, password, password_key, password_users, password_managers)
         self.__url = url
         self.__username = username

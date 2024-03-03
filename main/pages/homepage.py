@@ -77,7 +77,6 @@ class Home(UserControl):
                 server_public_key = self.__data["server_public_key"]
                 session_key = self.__data["session_key"]
                 
-                client_permanent_key = Hash.create_client_permanent_key(self.__password, self.__email)
                 self.__manager = Manager(self.__email, self.__password, self.__data, session_key=session_key, server_public_key=server_public_key)
                 print("setup complete")
                 
@@ -87,7 +86,6 @@ class Home(UserControl):
                     self.__manager = Manager(self.__email, self.__password, self.__data)
                 except Exception as e:
                     self.__page.go('/')
-                
                 
             
         except Exception as e:
@@ -114,16 +112,19 @@ class Home(UserControl):
     def get_password(self):
         return self.__password
     
-    def __download_full_passwords(self):
-        threads = [threading.Thread(target=password_card.download_icon) for password_card in self.__password_list] #get any icons for passwords
-        for thread in threads:
-            thread.start()
-        for thread in threads:
-            thread.join()
+    def __download_full_passwords(self, just_started = False):
+        #downloads once at first startup then again once full passwords downloaded (as password cards are regenerated and need to be updated)
+        if just_started:
+            threads = [threading.Thread(target=password_card.download_icon) for password_card in self.__password_list] #get any icons for passwords
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.__manager.import_passwords(full=True)
 
     def run_background_tasks(self):
         self.__unable_to_logout = True
-        self.__download_full_passwords()
+        self.__download_full_passwords(just_started = True)
         self.__manager.validate_client_public_key()
         self.__unable_to_logout = False
     
@@ -137,7 +138,6 @@ class Home(UserControl):
             self.refresh()
             self.__navrail.set_selected_index(0)
             self.__navrail.update()
-            self.run_background_tasks()
             
         elif self.__navrail.get_selected_index() == 2:
             self.__get_pending_passwords()
@@ -300,33 +300,47 @@ class Home(UserControl):
             print(passID)
             print(data)
             print(type)
-            if type == "info":
-                self.__current_passID = passID
-                self.__current_password = data[0]
-                self.__current_title = data[1]
-                self.__current_manager = data[2]
-                self.__container_col = InfoViewer(self,self.__current_title,self.__current_passID,self.__current_password,self.__current_manager)
-           
-            elif type == "password":
-                self.__current_passID = passID
-                self.__current_password = data[0]
-                self.__current_title = data[1]
-                self.__current_username = data[2]
-                self.__current_manager = data[3]
-                self.__current_url = data[4]
-                self.__current_additional_info = data[5]
-                self.__container_col = PasswordViewer(self,self.__current_passID,self.__current_title,self.__current_password,self.__current_username,self.__current_url,self.__current_manager,self.__current_additional_info)
-                
-            self.__main_container.content = self.__container_col
-            self.__main_container.update()
+            try:
+                if type == "info":
+                    self.__current_passID = passID
+                    self.__current_password = data[0]
+                    self.__current_title = data[1]
+                    self.__current_manager = data[2]
+                    self.__container_col = InfoViewer(self,self.__current_title,self.__current_passID,self.__current_password,self.__current_manager)
+            
+                elif type == "password":
+                    self.__current_passID = passID
+                    self.__current_password = data[0]
+                    self.__current_title = data[1]
+                    self.__current_username = data[2]
+                    self.__current_manager = data[3]
+                    self.__current_url = data[4]
+                    self.__current_additional_info = data[5]
+                    self.__container_col = PasswordViewer(self,self.__current_passID,self.__current_title,self.__current_password,self.__current_username,self.__current_url,self.__current_manager,self.__current_additional_info)
+                    
+                self.__main_container.content = self.__container_col
+                self.__main_container.update()
+            except Exception as e:
+                self.__page.snack_bar = SnackBar(
+                    content=Text(f"Error viewing password: {e}",color=TEXT_COLOUR),
+                    bgcolor=BACKGROUND_COLOUR_2,
+                    elevation=5,
+                    margin=5,
+                    duration=3000,
+                )
+                self.__page.snack_bar.open = True
             self.__processing = False
 
     
     def __add_infos_passwords(self): #adds the info and passwords to columns (as can't run when class if first called from views as not part of page yet)
+        print("adding infos and passwords")
         for element in self.__password_list_container.content.controls[0].controls:
             if type(element) == PasswordCard or type(element) == InfoCard:
                 self.__password_list_container.content.controls[0].controls.remove(element)
+                print("removed")
+        print("Removed password next stage")
         temp_passwords = reversed(self.__password_list) #so in correct order
+        print(f"Password list: {self.__password_list}")
         for card in temp_passwords:
             self.__password_list_container.content.controls[0].controls.insert(5,card) #always in position 5 due to no variation before
         for card in self.__info_list:
@@ -360,12 +374,13 @@ class Home(UserControl):
     def initialise(self):
         if self.__on_home:
             try:
-                self.__manager.import_passwords()
+                self.__manager.import_passwords(full=False)
                 self.__create_list()
                 self.__add_infos_passwords()
                 self.__password_list_container.content.controls.pop()
                 self.__password_list_container.update()
             except Exception as e:
+                print(traceback.format_exc())
                 pass
             
     def add_password(self, e):
@@ -403,7 +418,7 @@ class Home(UserControl):
             self.__password_list_container.content.controls.pop()
             self.__password_list_container.update()
             self.__processing = False
-            self.__download_full_passwords()
+            self.run_background_tasks()
             
     
     def __show_hide_passwords(self,e):

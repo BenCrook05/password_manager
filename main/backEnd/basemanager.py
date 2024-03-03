@@ -152,12 +152,14 @@ class Manager():
                 encrypted_symmetric_key = element[7]
                 e, d, n = self.__get_client_sharing_keys()
                 symmetric_key = Decrypt.decrypt_symmetric_key_sharing(encrypted_symmetric_key, d, n)
+                print("Symmetric key decrypted: ", symmetric_key)
                 #checks the decrypted symmetric key is valid
                 #if not, cancel and instead reject pending share
                 if len(symmetric_key) > 21:
                     pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,encrypted_password_key,"Reject")
                 #otherwise decrypt password key using symmetric key and re encrypt using client permanent key
                 password_key = Decrypt.decrypt_password_key_to_share(encrypted_password_key, symmetric_key)
+                print("Password key decrypted: ", password_key)
                 password_key = Encrypt.encrypt_password_key(password_key, self.__client_permanent_key)
                 data = pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,password_key,accept)
                 self.__pending_passwords.remove(element)
@@ -170,12 +172,12 @@ class Manager():
             return False
             
             
-    def import_passwords(self, iterations=0):
+    def import_passwords(self, full = False, iterations=0):
         #gets all passwords when user logs in
         #stores as list of password objects
         self.__passwords = []
         self.__scanned_passwords = None
-        password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email,True)
+        password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email,full)
         if password_data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.import_passwords(iterations=1) 
@@ -185,24 +187,42 @@ class Manager():
             return password_data
         success = True
         error = ""
-        for single_password in password_data:
-            try:
-                URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list = single_password
-                decrypted_password_key = Decrypt.decrypt_password_key(PasswordKey, self.__client_permanent_key)
-                decrypted_password = Decrypt.decrypt_password(Password, decrypted_password_key)
-                #infos don't have a url so check if exists to determine type of passinfo
-                if URL == "": 
-                    self.__passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
-                else:
-                    self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,AdditionalInfo,users_list,managers_list))
-            except Exception as e:
-                success = False
-                error = e
-        if not success:
-            #error has occured, but all other passwords are still downloaded (otherwise a single error would cause app to be unusable)     
-            return f"ERROR: {e}"      
+        if full:
+            for single_password in password_data:
+                try:
+                    URL, Title, Username, PassID, Manager, PasswordKey, AdditionalInfo, Password, users_list, managers_list = single_password
+                    decrypted_password_key = Decrypt.decrypt_password_key(PasswordKey, self.__client_permanent_key)
+                    decrypted_password = Decrypt.decrypt_password(Password, decrypted_password_key)
+                    #infos don't have a url so check if exists to determine type of passinfo
+                    if URL == "": 
+                        self.__passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
+                    else:
+                        self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,AdditionalInfo,users_list,managers_list))
+                except Exception as e:
+                    success = False
+                    error = e
+            if not success:
+                #error has occured, but all other passwords are still downloaded (otherwise a single error would cause app to be unusable)     
+                return f"ERROR: {error}"      
+            else:
+                return "SUCCESS"
+        #only import overviews to reduce tranmission time and reduce load up time
         else:
-            return "SUCCESS"
+            for single_password in password_data:
+                try:
+                    URL, Title, Username, PassID, Manager = single_password
+                    if URL == "":
+                        self.__passwords.append(Pw.Info(PassID,Title,Manager))
+                    else:
+                        self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager))
+                except Exception as e:
+                    success = False
+                    error = e
+            if not success:
+                return f"ERROR: {error}"
+            else:
+                return "SUCCESS"
+                    
         
         
     def get_passwords(self):
@@ -301,9 +321,11 @@ class Manager():
         #so would require sort and more operations to use other search
         #therefore linear search is efficient enough
         for password in self.__passwords:
-            if password.get_passID() == str(passID): #only allows user to request passwords which they have access to
+            if str(password.get_passID()) == str(passID): #only allows user to request passwords which they have access to
+                print("Getting specific password info")
                 data = password.get_password(client_email=self.__email,session_key=self.__session_key,
                                              server_public_key=self.__server_public_key,client_permanent_key=self.__client_permanent_key)  
+                print("Data: ", data)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.get_specific_password_info(passID,iterations=1)
@@ -419,8 +441,8 @@ class Manager():
                         return "UNAUTHENTICATED"
                 elif data == "REMOVED USER":
                     threads = [
-                        Thread(target=self.get_password_users, args=(self.__email, self.__session_key, self.__server_public_key)),
-                        Thread(target=self.get_password_managers, args=(self.__email, self.__session_key, self.__server_public_key))
+                        Thread(target=password.get_password_users, args=(self.__email, self.__session_key, self.__server_public_key)),
+                        Thread(target=password.get_password_managers, args=(self.__email, self.__session_key, self.__server_public_key))
                     ]
                     for thread in threads:
                         thread.start()

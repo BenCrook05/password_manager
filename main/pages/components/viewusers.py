@@ -29,7 +29,7 @@ class ViewUsers(UserControl):
         self.__homepage.view_password(None,self.__passID,self.__type)
 
     def __add_manager(self,e):
-        manager_email = self.__new_manager_text_field.value
+        manager_email = self.__new_manager_text_field.get_value()
         if manager_email == "":
             return
         if not self.__processing:

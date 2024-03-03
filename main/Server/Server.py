@@ -691,7 +691,7 @@ def get_password(data):
                 db.close()
                 return "LOCKDOWN"
             curs.execute(f"""
-                SELECT URL, Title, Username, Passwords.PassID, Manager
+                SELECT Password, AdditionalInfo, PasswordKey, Manager
                 FROM Passwords
                 JOIN PasswordKeys ON PasswordKeys.PassID = Passwords.PassID
                 WHERE PasswordKeys.UserID = '{temp_UserID}' AND Lockdown = 0

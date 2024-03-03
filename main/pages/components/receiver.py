@@ -102,7 +102,7 @@ class ReceiveShared(UserControl):
             )
             self.__homepage.get_page().snack_bar.open = True
             self.__homepage.get_page().update()
-            self.__back()
+            self.__homepage.refresh()
             
     
     def __back(self,e):

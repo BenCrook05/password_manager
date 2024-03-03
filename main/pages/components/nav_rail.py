@@ -42,7 +42,7 @@ class NavSideRail(UserControl):
                     NavigationRailDestination(
                         icon=icons.GROUPS_OUTLINED,
                         selected_icon=icons.GROUPS,
-                        label_content=Text("Shared with you",color=TEXT_COLOUR),
+                        label_content=Text("Shared",color=TEXT_COLOUR),
                     ),
                     NavigationRailDestination(
                         icon=icons.DOWNLOAD_OUTLINED,
