@@ -18,7 +18,7 @@ class Settings(UserControl):
         self.__thememode_switch = Switch()
         self.__current_password_input = Input()
         self.__new_password_input = Input()
-        self.__lockdown_switch = Switch()
+        self.__lockdown_switch = ElevatedButton()
         self.__col = Column()
         self.__stack = Stack()
         self.__start_mode = None
@@ -172,10 +172,9 @@ class Settings(UserControl):
             self.__start_mode = True
             self.__thememode_switch.value = True
             
-        self.__lockdown_switch = Switch(
-            value=False,
-            label="Unlock?",
-            on_change=self.__remove_lockdown,
+        self.__lockdown_switch = ElevatedButton(
+            "Unlock?",
+            on_click=self.__remove_lockdown,
         )
 
         container_width = self.__homepage.get_main_container_width()
@@ -206,6 +205,7 @@ class Settings(UserControl):
                             self.__thememode_switch,
                             Text("Resart app for changes to apply", size=12, font_family="Afacad", color=TEXT_COLOUR),
                             Divider(height=20,color="transparent"),
+                            Text("Locked down passwords", size=16, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                             Checkbox(label="Unlock any passwords you set to lockdown?", value=False),
                             Checkbox(label="Unlock all passwords that you manage?", value=False),
                             self.__lockdown_switch,

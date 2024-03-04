@@ -175,7 +175,8 @@ class Manager():
     def import_passwords(self, full = False, iterations=0):
         #gets all passwords when user logs in
         #stores as list of password objects
-        self.__passwords = []
+        # self.__passwords = []
+        new_passwords = []
         self.__scanned_passwords = None
         password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email,full)
         if password_data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
@@ -195,16 +196,18 @@ class Manager():
                     decrypted_password = Decrypt.decrypt_password(Password, decrypted_password_key)
                     #infos don't have a url so check if exists to determine type of passinfo
                     if URL == "": 
-                        self.__passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
+                        new_passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
                     else:
-                        self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,AdditionalInfo,users_list,managers_list))
+                        new_passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,AdditionalInfo,users_list,managers_list))
                 except Exception as e:
                     success = False
                     error = e
             if not success:
+                self.__passwords = new_passwords
                 #error has occured, but all other passwords are still downloaded (otherwise a single error would cause app to be unusable)     
                 return f"ERROR: {error}"      
             else:
+                self.__passwords = new_passwords
                 return "SUCCESS"
         #only import overviews to reduce tranmission time and reduce load up time
         else:
@@ -212,15 +215,17 @@ class Manager():
                 try:
                     URL, Title, Username, PassID, Manager = single_password
                     if URL == "":
-                        self.__passwords.append(Pw.Info(PassID,Title,Manager))
+                        new_passwords.append(Pw.Info(PassID,Title,Manager))
                     else:
-                        self.__passwords.append(Pw.Password(PassID,Title,URL,Username,Manager))
+                        new_passwords.append(Pw.Password(PassID,Title,URL,Username,Manager))
                 except Exception as e:
                     success = False
                     error = e
             if not success:
+                self.__passwords = new_passwords
                 return f"ERROR: {error}"
             else:
+                self.__passwords = new_passwords
                 return "SUCCESS"
                     
         
@@ -265,18 +270,19 @@ class Manager():
                
     def __generate_csv(self, password_list):
         try:
+            print("password_list: ", password_list)
             password_list = list(map(lambda x: [x[4],x[1]], password_list))
-            csv_file = "passwords.csv"
-            #create a path to the downloads directory
             #removes passwords without a url (infos) 
-            for password in password_list:
-                if password[0] == "":
-                    password.remove(password)
+            password_list = [password for password in password_list if password[0] != ""]
+            
+            #create a path to the downloads directory
+            csv_file = "passwords.csv"
             downloads_dir = os.path.join(os.path.expanduser("~"), "Downloads")
             csv_file_path = os.path.join(downloads_dir, csv_file)
             #deletes password.csv if already exists
             if os.path.exists(csv_file_path):
                 os.remove(csv_file_path)
+                
             #writes password list to csv file
             with open(csv_file_path, "w", newline="") as file:
                 writer = csv.writer(file)
@@ -288,6 +294,7 @@ class Manager():
                 subprocess.Popen(["explorer", os.path.join(os.path.expanduser("~"), "Downloads")])
             return True
         except Exception as e:
+            print(traceback.format_exc())
             return False
     
         

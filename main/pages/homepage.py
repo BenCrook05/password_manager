@@ -128,32 +128,35 @@ class Home(UserControl):
         self.__manager.validate_client_public_key()
         self.__unable_to_logout = False
     
-    def destination_change(self,e):
-        ###edit destination depending on the selected option
+    def destination_change(self, e):
+        # Edit destination depending on the selected option
+        # Set all password cards unselected (as destination doesn't ever show Viewer)
+        self.__set_all_unselected()
+
         if self.__navrail.get_selected_index() == 0:
             self.__main_container.content = self.__initial_icon
             self.__main_container.update()
-            
+
         elif self.__navrail.get_selected_index() == 1:
             self.refresh()
             self.__navrail.set_selected_index(0)
             self.__navrail.update()
-            
+
         elif self.__navrail.get_selected_index() == 2:
             self.__get_pending_passwords()
-            
+
         elif self.__navrail.get_selected_index() == 3:
             self.__export_passwords()
             self.__navrail.set_selected_index(0)
             self.__navrail.update()
-            
+
         elif self.__navrail.get_selected_index() == 4:
             self.__scan_passwords()
 
         elif self.__navrail.get_selected_index() == 5:
-            self.__main_container.content = Settings(self,self.__data)
+            self.__main_container.content = Settings(self, self.__data)
             self.__main_container.update()
-            
+
         elif self.__navrail.get_selected_index() == 6:
             self.logout()
     
@@ -213,8 +216,16 @@ class Home(UserControl):
                 margin=5,
                 duration=3000,
             )
-            self.__page.snack_bar.open = True
-            self.__page.update()
+        else:
+            self.__page.snack_bar = SnackBar(
+                content=Text("Unable to export passwords",color=TEXT_COLOUR),
+                bgcolor=BACKGROUND_COLOUR_2,
+                elevation=5,
+                margin=5,
+                duration=3000,
+            )
+        self.__page.snack_bar.open = True
+        self.__page.update()
 
     def share_password(self,passID, type):
         self.__main_container.content = Sharer(self,self.__data,passID,type)
@@ -318,9 +329,24 @@ class Home(UserControl):
                     self.__current_additional_info = data[5]
                     self.__container_col = PasswordViewer(self,self.__current_passID,self.__current_title,self.__current_password,self.__current_username,self.__current_url,self.__current_manager,self.__current_additional_info)
                     
+                # change background colour of the selected password in password card list
+                for element in self.__password_list:
+                    if element.get_passID() == passID:
+                        element.set_selected()
+                    else:
+                        element.set_unselected()
+                
+                for element in self.__info_list:
+                    if element.get_passID() == passID:
+                        element.set_selected()
+                    else:
+                        element.set_unselected()
+            
                 self.__main_container.content = self.__container_col
                 self.__main_container.update()
+                
             except Exception as e:
+                print(traceback.format_exc())
                 self.__page.snack_bar = SnackBar(
                     content=Text(f"Error viewing password: {e}",color=TEXT_COLOUR),
                     bgcolor=BACKGROUND_COLOUR_2,
@@ -331,7 +357,13 @@ class Home(UserControl):
                 self.__page.snack_bar.open = True
             self.__processing = False
 
-    
+    def __set_all_unselected(self):
+        for element in self.__password_list:
+            element.set_unselected()
+        for element in self.__info_list:
+            element.set_unselected()
+        
+
     def __add_infos_passwords(self): #adds the info and passwords to columns (as can't run when class if first called from views as not part of page yet)
         print("adding infos and passwords")
         for element in self.__password_list_container.content.controls[0].controls:
@@ -478,10 +510,12 @@ class Home(UserControl):
         )
         self.__search_box = TextField(
             label="Search",
-            width=330,
+            width=310,
             height=50,
             text_size=14,
             on_change=self.__search,
+            border=border.all(2,TEXT_COLOUR),
+            border_radius=border_radius.all(15),
         )
         self.__password_list_container = Container( #will contain scrollable list of passwords and info
             width=350,

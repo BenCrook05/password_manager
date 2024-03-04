@@ -35,11 +35,22 @@ class PasswordCard(UserControl):
         self.__showing_username = ""
         self.__card = Card()
     
+    def get_passID(self):  
+        return self.__passID
+    
     def get_title(self):
         return self.__title
     
     def get_username(self):
         return self.__username
+    
+    def set_selected(self):
+        self.__card.content.bgcolor = THEME_COLOUR
+        self.__card.update()
+        
+    def set_unselected(self):
+        self.__card.content.bgcolor = BACKGROUND_COLOUR_2
+        self.__card.update()
     
     def get_url(self):
         return self.__url
@@ -155,6 +166,9 @@ class InfoCard(UserControl):
         self.__card = Card()
         self.__img = Icon()
         
+    def get_passID(self):  
+        return self.__passID
+        
     def get_title(self):
         return self.__title
     
@@ -164,6 +178,14 @@ class InfoCard(UserControl):
         
     def hide(self):
         self.__card.visible = False
+        self.__card.update()
+
+    def set_selected(self):
+        self.__card.content.bgcolor = THEME_COLOUR
+        self.__card.update()
+        
+    def set_unselected(self):
+        self.__card.content.bgcolor = BACKGROUND_COLOUR_2
         self.__card.update()
 
     def build(self):
