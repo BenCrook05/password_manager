@@ -21,7 +21,7 @@ class NewPassword(UserControl):
         if self.__check_box.value == True:
             data = self.__homepage.get_manager().accept_pending_share(self.__passID, "Accept")
             self.__homepage.get_page().snack_bar = SnackBar(
-                content=Text(f"Password uploaded with code: {data.lower() if data else "None"}",color=TEXT_COLOUR),
+                content=Text(f"Password uploaded with code: {data.lower() if data else 'None'}",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
                 elevation=5,
                 margin=5,
