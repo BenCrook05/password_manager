@@ -5,6 +5,7 @@ import hashlib
 import uuid
 import binascii
 import backEnd.AsymmetricEncryption.endToEnd_encryption as rsa
+import backEnd.SymmetricEncryption.XorEncryption as xor
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import random
