@@ -170,7 +170,7 @@ class Encryption:
         return plaintext_data_str
 
     @staticmethod
-    def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0) -> str:
+    def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         count += 1
         if isinstance(data, dict):
             for key, value in data.items():
@@ -185,19 +185,10 @@ class Encryption:
             length = len(data) % len(symmetric_key)
             start_pos = int(symmetric_key[length])
             symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-            # return encryptor.encryptdecrypt(data, str(symmetric_key))
-            return Encryption.encryptdecrypt(data,str(symmetric_key),encryptor)
+            return encryptor.encryptdecrypt(data, str(symmetric_key))
         else:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
 
-    @staticmethod
-    def encryptdecrypt(data,key,encrypt=True) -> str:
-        symmetric_key = Encryption.generate_fernet(key)
-        if encrypt:
-            return symmetric_key.encrypt(data.encode('utf-8')).decode('utf-8')
-        else:
-            return symmetric_key.decrypt(data.encode('utf-8')).decode('utf-8')
-    
     @staticmethod
     def generate_symmetric_key():
         encryptor = xor.XorEncryption()
@@ -211,8 +202,8 @@ class Encryption:
 
     @staticmethod
     def encrypt_data_to_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, True)
+        encryptor = xor.XorEncryption()
+        encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
         return encrypted_data
 
     @staticmethod
@@ -224,22 +215,10 @@ class Encryption:
 
     @staticmethod
     def decrypt_data_from_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, False)
+        encryptor = xor.XorEncryption()
+        decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
         return decrypted_data
 
-    @staticmethod
-    def generate_fernet(extra=""):
-        ADDED_STRING = os.getenv("ADDED_STRING")
-        ADDED_STRING += extra
-        ADDED_STRING = ADDED_STRING[-50:]
-        combined_string = ADDED_STRING.encode()
-        hashed_key = hashlib.sha256(combined_string).digest()
-        fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
-        fernet_key = Fernet(fernet_key_base64)
-        return fernet_key
-
-    
     @staticmethod
     def create_error_check(length=16):
         modulus = random.randint(100,999)
