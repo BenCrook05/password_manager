@@ -29,10 +29,18 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         length = len(data) % len(symmetric_key)
         start_pos = int(symmetric_key[length])
         symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-        return encryptor.encryptdecrypt(data, str(symmetric_key))
+        # return encryptor.encryptdecrypt(data, str(symmetric_key))
+        return encryptdecrypt(data, str(symmetric_key), encryptor)
     else:
         return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
-    
+
+def encryptdecrypt(data, key, encrypt=True) -> str:
+        symmetric_key = Generate.generate_fernet(key)
+        #determine if the data is encrypted or not
+        if encrypt:
+            return symmetric_key.encrypt(data.encode('utf-8')).decode('utf-8')
+        else: #decrypt
+            return symmetric_key.decrypt(data.encode('utf-8')).decode('utf-8')
 
 class Encrypt:
     @staticmethod
@@ -43,8 +51,8 @@ class Encrypt:
     
     @staticmethod
     def encrypt_data_to_server(data, key):
-        encryptor = xor.XorEncryption()
-        encrypted_data = encryptdecrypt_directory(data, key, encryptor)
+        # encryptor = xor.XorEncryption()
+        encrypted_data = encryptdecrypt_directory(data, key, True)
         return encrypted_data
 
     @staticmethod
@@ -90,8 +98,8 @@ class Decrypt:
     
     @staticmethod
     def decrypt_data_from_server(data, key):
-        encryptor = xor.XorEncryption()
-        decrypted_data = encryptdecrypt_directory(data, key, encryptor)
+        # encryptor = xor.XorEncryption()
+        decrypted_data = encryptdecrypt_directory(data, key, False)
         return decrypted_data
 
     @staticmethod
