@@ -1,5 +1,5 @@
 from flet import *
-from views import views_handler
+from pages.views import views_handler
 from assets.colours import Colours
 from datetime import datetime
 import traceback

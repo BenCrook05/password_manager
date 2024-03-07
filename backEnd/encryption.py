@@ -10,6 +10,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import random
 import time
+from datetime import datetime
+import re
 from dotenv import load_dotenv
 import os
 load_dotenv('/assets/.env')
@@ -26,7 +28,7 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         return type(data)(encrypted_data)
     
     elif isinstance(data, str):
-        length = len(data) % len(symmetric_key)
+        length = (len(data) + count) % len(symmetric_key)
         start_pos = int(symmetric_key[length])
         symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
         return encryptor.encryptdecrypt(data, str(symmetric_key))
@@ -39,6 +41,7 @@ class Encrypt:
     def encrypt_key_to_server(data, public_key):
         e, n = public_key
         encrypted_key = rsa.AsyncRSA.encrypt_symmetric_key(data, e, n)
+        print(f"encrypted_key: {encrypted_key}")
         return encrypted_key
     
     @staticmethod
@@ -152,6 +155,23 @@ class Generate:
             random_char = chr(random.randint(0, 9) + ord('0'))
             key += random_char
         return key
+    
+    @staticmethod
+    def generate_client_permanent_key(client_permanent_key: bytes):
+        #derives from password and month/year
+        client_permanent_key = str(client_permanent_key)
+        current_date = str(datetime.now().strftime("/%m/%Y"))
+        permanent_key_integer_list = list(map(ord,(client_permanent_key)))
+        permanent_key_string_list = list(map(str, permanent_key_integer_list))
+        permanent_key_string = ''.join(permanent_key_string_list)
+        permanent_key_integer = int(permanent_key_string)
+        date_no_characters = re.sub(r'\D', '', current_date)
+        date_integer = int(date_no_characters)
+        data_string = str(permanent_key_integer % date_integer)
+        data_integer_list = list(map(ord, data_string))
+        data_integer_string = ''.join(list(map(str, data_integer_list)))
+        e, d, n = rsa.AsyncRSA.generate_keys(random=False, seed=data_integer_string)
+        return (e,d,n)
     
     @staticmethod
     def generate_fernet(extra=""):

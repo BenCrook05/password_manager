@@ -182,7 +182,7 @@ class Encryption:
             return type(data)(encrypted_data)
         
         elif isinstance(data, str):
-            length = len(data) % len(symmetric_key)
+            length = (len(data) + count) % len(symmetric_key)
             start_pos = int(symmetric_key[length])
             symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
             return encryptor.encryptdecrypt(data, str(symmetric_key))
@@ -190,9 +190,12 @@ class Encryption:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
 
     @staticmethod
-    def generate_symmetric_key():
-        encryptor = xor.XorEncryption()
-        return encryptor.generate_key(24)
+    def generate_symmetric_key(length=24):
+        key = ""
+        for i in range(length):
+            random_char = chr(random.randint(0, 9) + ord('0'))
+            key += random_char
+        return key
 
     @staticmethod
     def encrypt_key_to_client(data, client_public_key):
@@ -1448,6 +1451,7 @@ def receive_data():
             
         else:
             flag = "encryption fail"
+            write_errors(data,"Error check")
             data_to_return = None
             
         
@@ -1470,6 +1474,9 @@ def receive_data():
 
     except Exception as e:
         write_errors(traceback.format_exc(),"Handle")
+        write_errors(encrypted_symmetric_key,"Handle: encrypted_symmetric_key")
+        write_errors(symmetric_key,"Handle: symmetric_key")
+        write_errors(data,"Handle: data")
         return jsonify({"data":["FAILED AT HANDLE",str(e)]})
 
 

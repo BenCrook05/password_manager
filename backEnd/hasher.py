@@ -6,7 +6,7 @@ import base64
 
 class Hash:
     @staticmethod
-    def create_hash(data, salt_type="random"): #data passed in bytes, salt is "random" or "default", or custom string
+    def create_hash(data: bytes, salt_type="random") -> str: #data passed in bytes, salt is "random" or "default", or custom string
         ph = PasswordHasher(time_cost=2, memory_cost=65536, parallelism=4)
         if salt_type == "random":
             hash = ph.hash(data)
@@ -31,7 +31,7 @@ class Hash:
             return False
         
     @staticmethod
-    def create_client_permanent_key(client_raw_password, client_email):
+    def create_client_permanent_key(client_raw_password, client_email) -> bytes:
         #special hashing module used for client_password
         password = client_raw_password+(client_email[0:5])
         password = password.encode('utf-8')

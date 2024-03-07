@@ -47,20 +47,7 @@ class Manager():
     
     
     def __get_client_sharing_keys(self):
-        #derive from client_password and the month.
-        client_permanent_key = str(self.__client_permanent_key)
-        current_date = str(datetime.now().strftime("/%m/%Y"))
-        permanent_key_integer_list = list(map(ord,(client_permanent_key)))
-        permanent_key_string_list = list(map(str, permanent_key_integer_list))
-        permanent_key_string = ''.join(permanent_key_string_list)
-        permanent_key_integer = int(permanent_key_string)
-        date_no_characters = re.sub(r'\D', '', current_date)
-        date_integer = int(date_no_characters)
-        data_string = str(permanent_key_integer % date_integer)
-        data_integer_list = list(map(ord, data_string))
-        data_integer_string = ''.join(list(map(str, data_integer_list)))
-        e, d, n = rsa.generate_keys(random=False, seed=data_integer_string)
-        return e, d, n
+        return Generate.generate_client_permanent_key(self.__client_permanent_key)
             
     
     def __set_session_key(self):
