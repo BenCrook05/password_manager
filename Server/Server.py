@@ -190,6 +190,25 @@ class Encryption:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
 
     @staticmethod
+    def encryptdecrypt(data: str, key: str, encrypt: bool):
+        cipher_suite = Encryption.generate_fernet(key)
+        if encrypt:
+            return cipher_suite.encrypt(data.encode('utf-8')).decode('utf-8')
+        else:
+            return cipher_suite.decrypt(data.encode('utf-8')).decode('utf-8')
+
+    @staticmethod
+    def generate_fernet(extra=""): #identical to client function
+        ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
+        ADDED_STRING += extra
+        ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
+        combined_string = (str(uuid.getnode())+ ADDED_STRING).encode()
+        hashed_key = hashlib.sha256(combined_string).digest()
+        fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
+        fernet_key = Fernet(fernet_key_base64)
+        return fernet_key
+    
+    @staticmethod
     def generate_symmetric_key(length=24):
         key = ""
         for i in range(length):
@@ -205,8 +224,9 @@ class Encryption:
 
     @staticmethod
     def encrypt_data_to_client(data, symmetric_key):
-        encryptor = xor.XorEncryption()
-        encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+        # encryptor = xor.XorEncryption()
+        # encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+        encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, True)
         return encrypted_data
 
     @staticmethod
@@ -218,8 +238,9 @@ class Encryption:
 
     @staticmethod
     def decrypt_data_from_client(data, symmetric_key):
-        encryptor = xor.XorEncryption()
-        decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+        # encryptor = xor.XorEncryption()
+        # decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+        decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, False)
         return decrypted_data
 
     @staticmethod
