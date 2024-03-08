@@ -185,7 +185,7 @@ class Encryption:
             length = (len(data) + count) % len(symmetric_key)
             start_pos = int(symmetric_key[length])
             symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-            return encryptor.encryptdecrypt(data, str(symmetric_key))
+            return encryptor.encryptdecrypt(data, str(symmetric_key), encryptor)
         else:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
 
