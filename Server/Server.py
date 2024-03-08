@@ -182,10 +182,11 @@ class Encryption:
             return type(data)(encrypted_data)
         
         elif isinstance(data, str):
-            length = (len(data) + count) % len(symmetric_key)
-            start_pos = int(symmetric_key[length])
-            symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-            return encryptor.encryptdecrypt(data, str(symmetric_key), encryptor)
+            # length = (len(data) + count) % len(symmetric_key)
+            # start_pos = int(symmetric_key[length])
+            # symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
+            # return encryptor.encryptdecrypt(data, str(symmetric_key), encryptor)
+            return Encryption.encryptdecrypt(data,str(symmetric_key),encryptor)
         else:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
 
@@ -202,7 +203,7 @@ class Encryption:
         ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
         ADDED_STRING += extra
         ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
-        combined_string = (str(uuid.getnode())+ ADDED_STRING).encode()
+        combined_string = ADDED_STRING.encode()
         hashed_key = hashlib.sha256(combined_string).digest()
         fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
         fernet_key = Fernet(fernet_key_base64)
@@ -1478,6 +1479,7 @@ def receive_data():
         
         client_public_key = json_data["client_public_key"]
         symmetric_key = Encryption.generate_symmetric_key()
+        write_errors(symmetric_key,"Symmetric Key to send")
         dic_to_send = {
             "data": data_to_return,
             "error_check": Encryption.create_error_check(),

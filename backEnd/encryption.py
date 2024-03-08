@@ -28,16 +28,26 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         return type(data)(encrypted_data)
     
     elif isinstance(data, str):
-        length = (len(data) + count) % len(symmetric_key)
-        start_pos = int(symmetric_key[length])
-        symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
+        # length = (len(data) + count) % len(symmetric_key)
+        # start_pos = int(symmetric_key[length])
+        # symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
         return encryptdecrypt(data, str(symmetric_key), encryptor)
         # return encryptor.encryptdecrypt(data, str(symmetric_key))
     else:
         return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
     
 def encryptdecrypt(data: str, key: str, encrypt: bool):
-    cipher_suite = Generate.generate_fernet(key)
+    
+    ADDED_STRING = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
+    # ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
+    ADDED_STRING += key
+    #only 50 characters required for corrent Fernet encryption
+    ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
+    combined_string = ADDED_STRING.encode()
+    hashed_key = hashlib.sha256(combined_string).digest()
+    fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
+    cipher_suite = Fernet(fernet_key_base64)
+    
     if encrypt:
         return cipher_suite.encrypt(data.encode('utf-8')).decode('utf-8')
     else:

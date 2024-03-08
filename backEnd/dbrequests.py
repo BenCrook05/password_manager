@@ -17,6 +17,7 @@ class PyAnyWhereRequests:
             formated_data = PyAnyWhereRequests.format_data(data_to_return, client_private_key)
             return formated_data
         except Exception as e:
+            print(traceback.format_exc())
             return PyAnyWhereRequests.get_server_key()
         
     @staticmethod
@@ -488,18 +489,23 @@ class PyAnyWhereRequests:
         #raises error if any fail in encryption process
         encrypted_symmetric_key = data_to_return["encrypted_symmetric_key"]
         encrypted_data = data_to_return["data"]
+        print(f"Encrypted data received: {encrypted_data}")
         symmetric_key = Decrypt.decrypt_key_from_server(encrypted_symmetric_key, client_private_key)
         flag = data_to_return["flag"]
         if flag == "encryption fail":
+            print("Encryption failed")
             raise Exception("KeyError")
         elif flag == "encryption success":
             if len(symmetric_key) != 24:
+                print("Symmetric key length incorrect")
                 raise Exception("KeyError")
             data = Decrypt.decrypt_data_from_server(encrypted_data, str(symmetric_key))
+            print(f"Data received: {data}")
             error_check = data["error_check"]
             if Generate.validate_error_check(error_check):
                 #extremely unlikely for error check to fail, but last precaution
                 returned_data = data["data"]
+                
                 try:
                     if returned_data[0]=="FAILED":
                         return "FAILED"
@@ -509,6 +515,7 @@ class PyAnyWhereRequests:
                 print(f"Data received: {returned_data}")
                 return returned_data
             else:
+                
                 raise Exception("KeyError")
         
         
