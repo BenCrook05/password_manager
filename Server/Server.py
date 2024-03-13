@@ -759,6 +759,8 @@ def reset_client_password(data):
                     for passID, password_key in new_password_keys.items():
                         password_key = Encryption.encrypt_for_db(password_key)
                         curs.execute(f"UPDATE PasswordKeys SET PasswordKey='{password_key}' WHERE PassID='{passID}' AND UserID='{temp_UserID}'")
+                    #delete all pending passwords (now that password has been reset, so sharing keys are invalid)
+                    curs.execute(f"DELETE FROM PendingPasswords WHERE RecipientUserID='{temp_UserID}'")
                     curs.close()
                     db.commit()
                     db.close()
@@ -1043,14 +1045,23 @@ def remove_password_user(data):
     
 
 # only used by managers
-def get_password_users(data):
-    session_key=data["session_key"]
-    client_email=data["client_email"]
-    temp_PassID=data["passID"]
-    try:
-        manager_only=data["manager_only"]
-    except Exception as e:
-        manager_only=False
+def get_password_users(*args):
+    if len(args) == 1:
+        session_key=args[0]["session_key"]
+        client_email=args[0]["client_email"]
+        temp_PassID=args[0]["passID"]
+        try:
+            manager_only=args[0]["manager_only"]
+        except Exception as e:
+            manager_only=False
+    else:
+        session_key=args[0]
+        client_email=args[1]
+        temp_PassID=args[2]
+        try:
+            manager_only=args[3]
+        except Exception as e:
+            manager_only=False
 
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
@@ -1106,15 +1117,16 @@ def delete_password_instance(data):
                 return ["FAILED",traceback.format_exc()]
         else:
             try:
-                users = get_password_users(session_key=session_key, client_email=client_email, temp_PassID=temp_PassID, manager_only=False)
+                users = get_password_users(session_key, client_email, temp_PassID, False)
                 is_user = False
                 for user in users:
                     if user[0] == new_manager_email:
                         is_user = True
-                if is_user == False:
+                if not is_user:
                     return "NEED TO SHARE"
                 else:
-                    data = add_manager(session_key=session_key,client_email=client_email,new_manager_email=new_manager_email,temp_PassID=temp_PassID)
+                    data["passID"] = temp_PassID
+                    data = add_manager(data)
                     if data == "ADDED MANAGER":
                         db = connect_to_db()
                         curs = db.cursor()
@@ -1124,7 +1136,7 @@ def delete_password_instance(data):
                         db.commit()
                         db.close()
                         send_email("SecureNet: Deleted Password Instance", f"One of your passwords has been deleted and a new manager has been added. If this wasn't you, login to secure your account.", client_email)
-                        return f"DELETED PASSWORD INSTANCE and ADDED MANAGER {new_manager_email}"
+                        return "DELETED PASSWORD INSTANCE and ADDED MANAGER"
                     else:
                         return data
             except Exception as e:

@@ -34,24 +34,30 @@ class PasswordAdder(UserControl):
             username = self.__username.get_value()
             password = self.__password.get_value()
             additional_info = self.__additional_info.get_value()
-            if title == "":
-                self.__title_input.set_error_text("Title required")
-                self.__title_input.update()
-                return 
-            elif password == "":
-                self.__password.set_error_text("Password required")
-                self.__password.update()
-                return 
-            
-            if self.__current_state == "password": #elements only required for passwords not infos
-                if url == "":
-                    self.__url_input.set_error_text("URL required")
-                    self.__url_input.update()
-                    return 
-                if username == "":
-                    self.__username.set_error_text("Username required")
-                    self.__username.update()
-                    return 
+            try:
+                if title == "":
+                    self.__title_input.set_error_text("Title required")
+                    self.__title_input.update()
+                    raise Exception("Title required") 
+                elif password == "":
+                    self.__password.set_error_text("Password required")
+                    self.__password.update()
+                    raise Exception("Password required") 
+                
+                if self.__current_state == "password": #elements only required for passwords not infos
+                    if url == "":
+                        self.__url_input.set_error_text("URL required")
+                        self.__url_input.update()
+                        raise Exception("URL required") 
+                    if username == "":
+                        self.__username.set_error_text("Username required")
+                        self.__username.update()
+                        raise Exception("Username required") 
+            except:
+                self.__stack.controls.pop()
+                self.__stack.update()
+                self.__processing = False
+                return
                 
             self.__homepage.get_manager().add_new_password(title,url,username,additional_info,password)
             self.__homepage.get_page().snack_bar = SnackBar(

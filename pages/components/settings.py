@@ -52,29 +52,28 @@ class Settings(UserControl):
             self.__stack.update()   
             
              
-            if self.__lockdown_switch.value:
-                result = self.__homepage.get_manager().remove_all_locked_down_passwords()
-                if result == "Failed":
-                    self.__homepage.get_page().snack_bar = SnackBar(
-                        content=Text(f"Failed to remove lockdown",color=TEXT_COLOUR),
-                        bgcolor=BACKGROUND_COLOUR_2,
-                        elevation=5,
-                        margin=5,
-                        duration=3000,
-                    )
-                    self.__homepage.get_page().snack_bar.open = True
-                    self.__homepage.get_page().update()
-                    
-                elif result == "No lockdown":
-                    self.__homepage.get_page().snack_bar = SnackBar(
-                        content=Text("No passwords in lockdown",color=TEXT_COLOUR),
-                        bgcolor=BACKGROUND_COLOUR_2,
-                        elevation=5,
-                        margin=5,
-                        duration=3000,
-                    )
-                    self.__homepage.get_page().snack_bar.open = True
-                    self.__homepage.get_page().update()
+            result = self.__homepage.get_manager().remove_all_locked_down_passwords()
+            if result == "Failed":
+                self.__homepage.get_page().snack_bar = SnackBar(
+                    content=Text(f"Failed to remove lockdown",color=TEXT_COLOUR),
+                    bgcolor=BACKGROUND_COLOUR_2,
+                    elevation=5,
+                    margin=5,
+                    duration=3000,
+                )
+                self.__homepage.get_page().snack_bar.open = True
+                self.__homepage.get_page().update()
+                
+            elif result == "No lockdown":
+                self.__homepage.get_page().snack_bar = SnackBar(
+                    content=Text("No passwords in lockdown",color=TEXT_COLOUR),
+                    bgcolor=BACKGROUND_COLOUR_2,
+                    elevation=5,
+                    margin=5,
+                    duration=3000,
+                )
+                self.__homepage.get_page().snack_bar.open = True
+                self.__homepage.get_page().update()
 
             self.__homepage.get_navrail().set_selected_index(0)
             self.__homepage.get_navrail().get_nav().update()

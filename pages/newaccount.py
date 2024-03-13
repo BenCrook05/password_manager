@@ -86,8 +86,7 @@ class Newaccount(UserControl):
 
                         self.__stack.controls.pop()
                         self.__stack.update()
-                        self.__page.dialog = self.__dlg
-                        self.__dlg.open = True
+
                         self.__page.update()
                     else:
                         self.__page.snack_bar = SnackBar(
@@ -103,7 +102,6 @@ class Newaccount(UserControl):
                 else:
                     self.__password_input.set_error_text("")
                     self.__password_input.update()
-                    time.sleep(1)
                     self.__password_input.set_error_text("Password not strong enough")
                     self.__password_input.set_value("")
                     self.__confirm_password_input.set_value("")
@@ -113,13 +111,13 @@ class Newaccount(UserControl):
             else:
                 self.__password_input.set_error_text("")
                 self.__password_input.update()
-                time.sleep(1)
                 self.__password_input.set_error_text("Passwords do not match")
                 self.__password_input.set_value("")
                 self.__confirm_password_input.set_value("")
                 self.__password_input.update()
                 self.__confirm_password_input.update()
                 self.__stack.controls.pop()
+            self.__processing = False
 
     
     def __attempt_add_account(self,e):

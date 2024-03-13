@@ -55,7 +55,7 @@ class Sharer(UserControl):
                 if data == "NO USER":
                     self.__stack.controls.pop()
                     self.__stack.update()
-                    self.__user_input.error_text = "No user associated with  email"
+                    self.__user_input.error_text = ("No user associated with email")
                     self.__user_input.update()
                     self.__col.update()
                     self.__processing = False

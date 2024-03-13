@@ -366,14 +366,15 @@ class Manager():
                         return "UNAUTHENTICATED"
                 elif managers == "NOT MANAGER":
                     data = password.delete_password_instance(client_email=self.__email,new_manager_email=None,session_key=self.__session_key,server_public_key=self.__server_public_key)
-                    return data[0:25]
+                    return data[0:23]
                 else:
                     if len(managers) > 1:   #will cause exception if no managers because NoneType
                         data = password.delete_password_instance(client_email=self.__email,new_manager_email=None,session_key=self.__session_key,server_public_key=self.__server_public_key)
-                        return data[0:25]
+                        return data[0:23]
                     elif new_manager_email:
                         data = password.delete_password_instance(client_email=self.__email,new_manager_email=new_manager_email,session_key=self.__session_key,server_public_key=self.__server_public_key)
-                        return data[0:25]
+                        print("Data:", data)
+                        return data[0:23]
                     else:
                         return "New manager email required"
                

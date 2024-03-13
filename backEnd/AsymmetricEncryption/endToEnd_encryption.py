@@ -1,5 +1,5 @@
-import backEnd.AsymmetricEncryption.RSAEncryption as rsa
-# import RSAEncryption as rsa
+# import backEnd.AsymmetricEncryption.RSAEncryption as rsa
+import RSAEncryption as rsa
 import re
 import traceback
 
@@ -49,11 +49,47 @@ class AsyncRSA:
             decrypted_chunks = list(
                 map(lambda x: str(encryptor.decrypt(int(x), d, n)).zfill(increments), numbers_list)
             )
-            print(f"decrypted_chunks: {decrypted_chunks}")
             decrypted_key =''.join(decrypted_chunks)
             return decrypted_key
         
         except Exception as e:
             print(traceback.format_exc())
             return None
-        
+   
+   
+import time     
+keys = []
+for i in range(10):
+    time.sleep(1)
+    new_key = AsyncRSA.generate_keys()
+    keys.append(new_key)
+    print(new_key)
+    
+print(keys)
+i = input("Continue? ")
+ciphertext = []
+for key in keys:
+    new_ciphertext = AsyncRSA.encrypt_symmetric_key("12345678", key[1], key[2], increments=4)
+    ciphertext.append(new_ciphertext)
+    print(new_ciphertext)
+
+i = input("Continue? ")
+plaintext = []
+for i in range(len(ciphertext)):
+    new_plaintext = AsyncRSA.decrypt_symmetric_key(ciphertext[i], keys[i][0], keys[i][2],increments=4)
+    plaintext.append(new_plaintext)
+    print(new_plaintext)
+
+i = input("Continue? ")
+seed = "BenCrook"
+for i in range(10):
+    print(AsyncRSA.generate_keys(random=False, seed=seed))
+    
+    
+import random
+import string
+
+i = input("Continue? ")
+for i in range(10):
+    seed = ''.join(random.choices(string.ascii_letters + string.digits, k=25))
+    print(AsyncRSA.generate_keys(random=False, seed=seed))
