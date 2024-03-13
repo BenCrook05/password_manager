@@ -9,19 +9,14 @@ load_dotenv('/home/BenCrook/mysite/.env')
 from flask import Flask, request, jsonify
 
 import endToEnd_encryption as rsa
+from encryption_general import Encryption
 
-import XorEncryption as xor
+import connect
 
 import MySQLdb
-import json
-import requests
 
 from datetime import datetime, timedelta, date
 
-from cryptography.fernet import Fernet
-import hashlib
-import binascii
-import base64
 import random
 import string
 from argon2 import PasswordHasher
@@ -34,252 +29,9 @@ import traceback
 app=Flask(__name__)
 app.config['DEBUG']=True
 
-class Encryption:
-    @staticmethod
-    def generate_asymmetric_keys():
-        ### CREATE KEYS AS LIST ###
-        e, d, n = rsa.AsyncRSA.generate_keys()
-        e = int(e)
-        d = int(d)
-        n = int(n)
-        public_key = [e, n]
-        private_key = [d, n]
-        return e, d, n
- 
-    @staticmethod
-    def reset_client_sharing_keys(data):
-        session_key=data["session_key"]
-        client_email=data["client_email"]
-        new_public_key=data["new_public_key"]
-        authenticated = authenticate_session_key(session_key)
-        if authenticated == True:
-            db = connect_to_db()
-            curs = db.cursor()
-            curs.execute(f"UPDATE Users SET PermanentClientPublicKey='{new_public_key}' WHERE Email='{client_email}'")
-            curs.close()
-            db.commit()
-            db.close()
-            return "RESET"
-
-    @staticmethod
-    def reset_server_key():
-        keys = Encryption.generate_asymmetric_keys()
-        server_private_key = keys[0]
-        server_public_key = keys[1]
-        server_public_n = keys[2]
-        server_private_key = str(server_private_key)
-        server_public_key = str(server_public_key)
-        server_public_n = str(server_public_n)
-        server_private_key_bytes=bytes(server_private_key, encoding='utf8')
-        server_public_key_bytes=bytes(server_public_key, encoding='utf8')
-        server_public_n_bytes=bytes(server_public_n, encoding='utf8')
-        cipher_suite = Encryption.get_cipher_suite(True)
-        ciphertext_private_key = cipher_suite.encrypt(server_private_key_bytes)
-        ciphertext_public_key = cipher_suite.encrypt(server_public_key_bytes)
-        ciphertext_public_n = cipher_suite.encrypt(server_public_n_bytes)
-        ciphertext_private_key_str = base64.b64encode(ciphertext_private_key).decode('utf-8')
-        ciphertext_public_key_str = base64.b64encode(ciphertext_public_key).decode('utf-8')
-        ciphertext_public_n_str = base64.b64encode(ciphertext_public_n).decode('utf-8')
-        db = connect_to_db()
-        curs = db.cursor()
-        curs.execute(f"DELETE FROM AsymmetricKeys")
-        today = str(date.today())
-        curs.execute(f"INSERT INTO AsymmetricKeys(e,d,n,date) VALUES('{ciphertext_public_key_str}','{ciphertext_private_key_str}','{ciphertext_public_n_str}','{today}')")
-        curs.close()
-        db.commit()
-        db.close()
-
-
-    @staticmethod
-    def get_cipher_suite(include_day = False):
-        '''
-        Master key is a constant
-        Uses datetime so that the key changes daily
-        Used to store private key and store passwords on database
-        Using fernet encryption included with cryptography
-        '''
-        master_key = os.getenv('MASTERKEY')
-        if include_day:
-            current_date = str(date.today())
-            combined_string = (master_key + current_date).encode()
-        else:
-            combined_string = master_key.encode()
-        hashed_key = hashlib.sha256(combined_string).digest()
-        fernet_key = base64.urlsafe_b64encode(hashed_key)
-        cipher_suite = Fernet(fernet_key)
-        return cipher_suite
-
-
-    ### get functions for private/public keys for asymmetric encryption
-
-    @staticmethod
-    def get_server_key(key = 1):  #1 for public, 0 for private -(corresponds to index)
-
-        try:
-            db = connect_to_db()
-            curs = db.cursor()
-            curs.execute(f"SELECT e,d,n,date FROM AsymmetricKeys")
-            data = curs.fetchone()
-            curs.close()
-            db.close()
-            cipher_suite = Encryption.get_cipher_suite(True)
-            if key == 1:
-                ciphertext_exp = data[0]
-                ciphertext_n = data[2]
-            elif key == 0:
-                ciphertext_exp = data[1]
-                ciphertext_n = data[2]
-
-            ciphertext_exp_bytes = base64.b64decode(ciphertext_exp.encode('utf-8'))
-            ciphertext_n_bytes = base64.b64decode(ciphertext_n.encode('utf-8'))
-            if str(data[3]) == str(date.today()):
-                try:
-                    plaintext_exp = cipher_suite.decrypt(ciphertext_exp_bytes)
-                    plaintext_n = cipher_suite.decrypt(ciphertext_n_bytes)
-                    plaintext_exp_str = plaintext_exp.decode(encoding='utf-8')
-                    plaintext_n_str = plaintext_n.decode(encoding='utf-8')
-                    return [plaintext_exp_str, plaintext_n_str]
-                except Exception as e:
-                    return ["FAILED",str(e)]
-
-            Encryption.reset_server_key()
-            return Encryption.get_server_key(key)
-        except Exception as e:
-            Encryption.reset_server_key()
-            return Encryption.get_server_key(key)
-
-
-    # encrypts to store data on the database
-    @staticmethod
-    def encrypt_for_db(plaintext_data):
-        if not isinstance(plaintext_data, str):
-            plaintext_data = str(plaintext_data)
-        plaintext_data_bytes = bytes(plaintext_data, encoding='utf-8')
-        cipher_suite = Encryption.get_cipher_suite()
-        encrypted_data = cipher_suite.encrypt(plaintext_data_bytes)
-        encrypted_data_str = base64.urlsafe_b64encode(encrypted_data).decode('utf-8')
-        return encrypted_data_str
-
-    # decrypts data from database using permanent key
-    @staticmethod
-    def decrypt_from_db(encrypted_data):
-        cipher_suite = Encryption.get_cipher_suite()
-        encrypted_data_bytes = base64.b64decode(encrypted_data.encode('utf-8'))
-        plaintext_data = cipher_suite.decrypt(encrypted_data_bytes)
-        plaintext_data_str = plaintext_data.decode('utf-8')
-        return plaintext_data_str
-
-    @staticmethod
-    def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
-        count += 1
-        if isinstance(data, dict):
-            for key, value in data.items():
-                data[key] = Encryption.encryptdecrypt_directory(value, symmetric_key, encryptor) #has to treat dic differently as can't iterate through
-            return data
-        
-        elif isinstance(data, (list, tuple, set)):
-            encrypted_data = [Encryption.encryptdecrypt_directory(element, symmetric_key, encryptor) for element in data] #iterates through list and executes encryptdecrpt_directory on each element
-            return type(data)(encrypted_data)
-        
-        elif isinstance(data, str):
-            # length = (len(data) + count) % len(symmetric_key)
-            # start_pos = int(symmetric_key[length])
-            # symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-            # return encryptor.encryptdecrypt(data, str(symmetric_key), encryptor)
-            return Encryption.encryptdecrypt(data,str(symmetric_key),encryptor)
-        else:
-            return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
-
-    @staticmethod
-    def encryptdecrypt(data: str, key: str, encrypt: bool):
-        cipher_suite = Encryption.generate_fernet(key)
-        if encrypt:
-            return cipher_suite.encrypt(data.encode('utf-8')).decode('utf-8')
-        else:
-            return cipher_suite.decrypt(data.encode('utf-8')).decode('utf-8')
-
-    @staticmethod
-    def generate_fernet(extra=""): #identical to client function
-        ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
-        ADDED_STRING += extra
-        ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
-        combined_string = ADDED_STRING.encode()
-        hashed_key = hashlib.sha256(combined_string).digest()
-        fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
-        fernet_key = Fernet(fernet_key_base64)
-        return fernet_key
-    
-    @staticmethod
-    def generate_symmetric_key(length=24):
-        key = ""
-        for i in range(length):
-            random_char = chr(random.randint(0, 9) + ord('0'))
-            key += random_char
-        return key
-
-    @staticmethod
-    def encrypt_key_to_client(data, client_public_key):
-        e, n = client_public_key
-        encrypted_key = rsa.AsyncRSA.encrypt_symmetric_key(data, e, n)
-        return encrypted_key
-
-    @staticmethod
-    def encrypt_data_to_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
-        encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, True)
-        return encrypted_data
-
-    @staticmethod
-    def decrypt_key_from_client(data):
-        d, n = Encryption.get_server_key(0)
-        #print(f"Encrypted key: {data}")
-        decrypted_key = rsa.AsyncRSA.decrypt_symmetric_key(data, d, n)
-        return decrypted_key
-
-    @staticmethod
-    def decrypt_data_from_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
-        decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, False)
-        return decrypted_data
-
-    @staticmethod
-    def create_error_check(length=16):
-        modulus = random.randint(100,999)
-        divisor = random.randint(10**(length-3), 10**(length-2)-1)
-        integer_div = divisor // modulus
-        real_divisor = integer_div * modulus
-        return str(modulus)+str(real_divisor)
-
-    @staticmethod
-    def validate_error_check(data):
-        modulus = int(data[:3])
-        real_divisor = int(data[3:])
-        if real_divisor % modulus == 0:
-            return True
-        else:
-            return False
 
 
 
-def connect_to_db():
-    try:
-        db_password = os.getenv('DB_KEY')
-        db = MySQLdb.connect('BenCrook.mysql.eu.pythonanywhere-services.com',
-                              'BenCrook', db_password, 'BenCrook$PI_manager')
-        return db
-    except Exception as e:
-        write_errors(traceback.format_exc(),"Connecting")
-        return "FAILED TO CONNECT"
-
-def write_errors(error_code="None",function_name="None"):
-    existing_content = ""
-    with open("/home/BenCrook/mysite/error.txt", "r") as file:
-        existing_content = file.read()
-    with open("/home/BenCrook/mysite/error.txt", "w") as file:
-        file.write(f"\n\nFunction attempt: {function_name}\nError code: {str(error_code)}\nTime: {datetime.now().replace(second=0, microsecond=0)}")
-        file.write(existing_content)
 
 
 def send_email(subject, content, recipient_address):
@@ -329,12 +81,12 @@ def send_email(subject, content, recipient_address):
             smtp.login(email_sender, email_password)
             return smtp.sendmail(email_sender, email_receiver, em.as_string())
     except Exception as e:
-        write_errors(traceback.format_exc(),"Sending email")
+        connect.write_errors(traceback.format_exc(),"Sending email")
         return ["FAILED",traceback.format_exc()]
 
 def increase_login_attempts(client_email):
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
         temp_UserID = curs.fetchone()[0]
@@ -344,7 +96,7 @@ def increase_login_attempts(client_email):
         temp_failed_attempt_date = curs.fetchone()[0]
         temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
         if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
-            write_errors("INCREASING LOGIN ATTEMPTS","Increasing login attempts")
+            connect.write_errors("INCREASING LOGIN ATTEMPTS","Increasing login attempts")
             temp_login_attempts += 1
             curs.execute(f"UPDATE Users SET LoginAttempts='{temp_login_attempts}' WHERE UserID='{temp_UserID}'")
             curs.execute(f"UPDATE Users SET FailedAttemptDate='{datetime.now()}' WHERE UserID='{temp_UserID}'")
@@ -352,15 +104,29 @@ def increase_login_attempts(client_email):
             db.commit()
             db.close()
         else:
-            write_errors("RESETTING LOGIN ATTEMPTS","Increasing login attempts")
+            connect.write_errors("RESETTING LOGIN ATTEMPTS","Increasing login attempts")
             curs.execute(f"UPDATE Users SET LoginAttempts=1 WHERE UserID='{temp_UserID}'")
             curs.execute(f"UPDATE Users SET FailedAttemptDate='{datetime.now()}' WHERE UserID='{temp_UserID}'")
             curs.close()
             db.commit()
             db.close()
     except Exception as e:
-        write_errors(traceback.format_exc(),"Increasing login attempts")
+        connect.write_errors(traceback.format_exc(),"Increasing login attempts")
         return ["FAILED",traceback.format_exc()]
+
+def reset_client_sharing_keys(data):
+    session_key=data["session_key"]
+    client_email=data["client_email"]
+    new_public_key=data["new_public_key"]
+    authenticated = authenticate_session_key(session_key)
+    if authenticated == True:
+        db = connect.connect_to_db()
+        curs = db.cursor()
+        curs.execute(f"UPDATE Users SET PermanentClientPublicKey='{new_public_key}' WHERE Email='{client_email}'")
+        curs.close()
+        db.commit()
+        db.close()
+        return "RESET"
 
 
 def create_new_user(data):
@@ -374,7 +140,7 @@ def create_new_user(data):
     permanent_public_key=data["permanent_public_key"]
     mac_address_hash=data["mac_address_hash"]
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT Email FROM Users")
         emails = curs.fetchall()
@@ -392,7 +158,7 @@ def create_new_user(data):
         send_email(f"SecureNet: Authenticated Account. Code: {new_device_code}", "Enter into application", client_email)
         return "CODE SENT"
     except Exception as e:
-        write_errors(traceback.format_exc(),"Creating new user")
+        connect.write_errors(traceback.format_exc(),"Creating new user")
         return ["FAILED",traceback.format_exc()]
 
 def confirm_new_user(data):
@@ -400,13 +166,13 @@ def confirm_new_user(data):
     mac_address_hash=data["mac_address_hash"]
     code=data["code"]
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT NewDeviceCode FROM Users WHERE Email='{client_email}'")
         server_code = curs.fetchone()[0]
         if str(server_code) == str(code) and len(str(server_code))>0:
             # add new device to database
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -433,7 +199,7 @@ def confirm_new_user(data):
             send_email("SecureNet: Attempted Account Authentication", "An attempt was made to authenticate a new account.If this wasn't you, login to secure your account", client_email)
             return "INCORRECT CODE"
     except Exception as e:
-        write_errors(traceback.format_exc(),"Confirming new user")
+        connect.write_errors(traceback.format_exc(),"Confirming new user")
         return ["FAILED",traceback.format_exc()]
 
 
@@ -442,7 +208,7 @@ def create_new_device(data):
     mac_address_hash=data["mac_address_hash"]
     password=data["password"]
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
         temp_UserID = curs.fetchone()[0]
@@ -466,7 +232,7 @@ def create_new_device(data):
                 temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
                 if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
                     if temp_login_attempts >= 3: #failed third attempt within last hour, regardless of device
-                        write_errors("TOO MANY ATTEMPTS","Add new device")
+                        connect.write_errors("TOO MANY ATTEMPTS","Add new device")
                         curs.close()
                         db.close()
                         return "TOO MANY ATTEMPTS"
@@ -479,11 +245,11 @@ def create_new_device(data):
                 send_email(f"SecureNet: Authenticated New Device. Code: {new_device_code}", "Enter code into application", client_email)
                 return "CODE SENT"
             except:
-                write_errors(traceback.format_exc(), "Creating new device: failed match")   
+                connect.write_errors(traceback.format_exc(), "Creating new device: failed match")   
                 increase_login_attempts(client_email)
                 return "UNAUTHENTICATED"
     except Exception as e:
-        write_errors(traceback.format_exc(),"Creating new device")
+        connect.write_errors(traceback.format_exc(),"Creating new device")
         return "UNAUTHENTICATED"
 
 
@@ -492,7 +258,7 @@ def confirm_device_code(data):
     mac_address_hash=data["mac_address_hash"]
     code=data["code"]
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT NewDeviceCode FROM Users WHERE Email='{client_email}'")
         server_code = curs.fetchone()[0]
@@ -500,7 +266,7 @@ def confirm_device_code(data):
         db.close()
         if str(server_code) == str(code) and len(str(server_code))>0:
             # add new device to database
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -517,7 +283,7 @@ def confirm_device_code(data):
             send_email("SecureNet: Attempted Device Authentication", "An attempt was made to authenticate a new device. If this wasn't you, login to secure your account", client_email)
             return "INCORRECT CODE"
     except Exception as e:
-        write_errors(traceback.format_exc(),"Confirming device code")
+        connect.write_errors(traceback.format_exc(),"Confirming device code")
         return ["FAILED",traceback.format_exc()]
 
 
@@ -527,7 +293,7 @@ def authenticate_password(data):
     mac_address_hash=data["mac_address_hash"]
     password=data["password"]
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute("SELECT UserID FROM Users WHERE Email = %s", (client_email,))
         temp_UserID = curs.fetchone()[0]
@@ -541,7 +307,7 @@ def authenticate_password(data):
         temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
         if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
             if temp_login_attempts >= 3: #failed third attempt within last hour, regardless of device
-                write_errors("TOO MANY ATTEMPTS","Full authentication")
+                connect.write_errors("TOO MANY ATTEMPTS","Full authentication")
                 curs.close()
                 db.close()
                 return "TOO MANY ATTEMPTS"
@@ -560,7 +326,7 @@ def authenticate_password(data):
             hasher = PasswordHasher()
             try:
                 hasher.verify(password, db_password_hash.encode('utf-8')) #causes error if no match
-                db = connect_to_db()
+                db = connect.connect_to_db()
                 curs = db.cursor()
                 curs.execute(f"UPDATE Users SET LoginAttempts=0 WHERE UserID='{temp_UserID}'")
                 curs.close()
@@ -578,7 +344,7 @@ def authenticate_password(data):
                 temp_failed_attempt_date = datetime.strptime(temp_failed_attempt_date, "%Y-%m-%d %H:%M:%S.%f")
                 if temp_failed_attempt_date > datetime.now()-timedelta(hours=1): #failed attempt within last hour
                     if temp_login_attempts == 3: #failed third attempt within last hour, regardless of device
-                        write_errors("TOO MANY ATTEMPTS","Full authentication")
+                        connect.write_errors("TOO MANY ATTEMPTS","Full authentication")
                         curs.close()
                         db.close()
                         return "TOO MANY ATTEMPTS"
@@ -586,18 +352,18 @@ def authenticate_password(data):
                 db.close()
                 return "UNAUTHENTICATED"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Authenticating password")
+            connect.write_errors(traceback.format_exc(),"Authenticating password")
             return "UNAUTHENTICATED"
 
     except Exception as e:
-        write_errors(traceback.format_exc(),"Full authentication")
+        connect.write_errors(traceback.format_exc(),"Full authentication")
         return "UNAUTHENTICATED"
 
 
 
 def authenticate_session_key(client_session_key):
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         curs.execute(f"SELECT SessionKey, CreationDate FROM Sessions")
         keys_dates = curs.fetchall()
@@ -621,14 +387,14 @@ def authenticate_session_key(client_session_key):
                     return "KEY EXPIRED"
         return "NO KEY"
     except Exception as e:
-        write_errors(traceback.format_exc(),"Session Key auth")
+        connect.write_errors(traceback.format_exc(),"Session Key auth")
         return "UNAUTHENTICATED"
 
 def new_session_key(temp_deviceID):
     ###create session key###
     letters = string.ascii_lowercase
     original_session_key = ''.join(random.choice(letters) for i in range(64))
-    db=connect_to_db()
+    db=connect.connect_to_db()
     curs=db.cursor()
     date_time = datetime.now()
     session_key = Encryption.encrypt_for_db(original_session_key)
@@ -646,7 +412,7 @@ def get_password_overview(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -675,7 +441,7 @@ def get_password_overview(data):
                     passwords.append([URL, Title, Username, PassID, Manager])
             return passwords
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting password overview")
+            connect.write_errors(traceback.format_exc(),"Getting password overview")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -687,7 +453,7 @@ def get_username(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT Username FROM Passwords WHERE PassID='{temp_PassID}'")
             temp_username = curs.fetchone()[0]
@@ -695,7 +461,7 @@ def get_username(data):
             db.close()
             return temp_username
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting username")
+            connect.write_errors(traceback.format_exc(),"Getting username")
             return ["FAILED",traceback.format_exc()]
 
 def get_password(data):
@@ -705,7 +471,7 @@ def get_password(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -728,7 +494,7 @@ def get_password(data):
             password = Encryption.decrypt_from_db(password)
             return [password, additional_info, password_key, manager]
         except Exception as e:
-            write_errors(traceback.format_exc(), "Getting 1 password")
+            connect.write_errors(traceback.format_exc(), "Getting 1 password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -742,7 +508,7 @@ def reset_client_password(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             #verify user knows their raw password
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
@@ -767,11 +533,11 @@ def reset_client_password(data):
                     send_email("SecureNet: Password Reset", "Your password has been reset", client_email)
                     return "RESET PASSWORD"
             except Exception as e:
-                write_errors(traceback.format_exc(),"Resetting client password - failed to match original password")
+                connect.write_errors(traceback.format_exc(),"Resetting client password - failed to match original password")
                 send_email("SecureNet: Attempted Password Reset", "An attempt was made to reset your password. If this wasn't you, login to secure your account", client_email)
                 return "UNAUTHENTICATED"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Resetting client password")
+            connect.write_errors(traceback.format_exc(),"Resetting client password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -782,7 +548,7 @@ def get_all_passwords(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -809,7 +575,7 @@ def get_all_passwords(data):
                 pass_info.append([temp_PassID,password,password_key,additional_info,url,title,username,lockdown])
             return pass_info
         except Exception as e:
-            write_errors(traceback.format_exc(),"Get all passwords")
+            connect.write_errors(traceback.format_exc(),"Get all passwords")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -821,15 +587,15 @@ def set_to_lockdown(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
             #check user has password
             curs.execute(f"SELECT PassID FROM PasswordKeys WHERE UserID='{temp_UserID}'")
             all_PassID = curs.fetchall()
-            write_errors(f"PassID: {temp_PassID}","Setting to lockdown")
-            write_errors(f"all_PassID: {all_PassID}","Setting to lockdown")
+            connect.write_errors(f"PassID: {temp_PassID}","Setting to lockdown")
+            connect.write_errors(f"all_PassID: {all_PassID}","Setting to lockdown")
             if (int(temp_PassID),) not in all_PassID:
                 return "NO PASSWORD"
             curs.execute(f"UPDATE Passwords SET Lockdown=1 WHERE PassID='{temp_PassID}'")
@@ -839,7 +605,7 @@ def set_to_lockdown(data):
             send_email("SecureNet: Set to Lockdown", "The lockdown status on a password has been set", client_email)
             return "SET TO LOCKDOWN"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Setting to lockdown")
+            connect.write_errors(traceback.format_exc(),"Setting to lockdown")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -851,7 +617,7 @@ def remove_lockdown(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -877,7 +643,7 @@ def remove_lockdown(data):
             db.close()
             return "REMOVED LOCKDOWN"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Removing lockdown")
+            connect.write_errors(traceback.format_exc(),"Removing lockdown")
             return ["FAILED",traceback.format_exc()]
 
 
@@ -893,7 +659,7 @@ def add_new_password(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -917,7 +683,7 @@ def add_new_password(data):
             db.close()
             return "ADDED PASSWORD"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Adding new password")
+            connect.write_errors(traceback.format_exc(),"Adding new password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -933,7 +699,7 @@ def delete_password(data):
             temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
             if manager == 0:
                 return "NOT MANAGER"
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             # deletes password and all instances of password keys
             curs.execute(f"DELETE FROM PasswordKeys WHERE PassID='{temp_PassID}'")
@@ -946,7 +712,7 @@ def delete_password(data):
             send_email("SecureNet: Deleted Password", f"Your password for {title} has been deleted. If this wasn't you, login to secure your account.", client_email)
             return "DELETED PASSWORD"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Deleting password")
+            connect.write_errors(traceback.format_exc(),"Deleting password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -962,7 +728,7 @@ def add_manager(data):
             temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
             if manager == 0:
                 return "NOT MANAGER"
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             query = "SELECT UserID FROM Users WHERE Email = %s"
             curs.execute(query, (new_manager_email,))
@@ -987,7 +753,7 @@ def add_manager(data):
             db.close()
             return "ADDED MANAGER"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Adding manager")
+            connect.write_errors(traceback.format_exc(),"Adding manager")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -996,7 +762,7 @@ def add_manager(data):
 # needed for base data since many functions require same initial queries
 def get_manager_password_info(client_email, temp_PassID):
     try:
-        db = connect_to_db()
+        db = connect.connect_to_db()
         curs = db.cursor()
         query = (f"SELECT UserID FROM Users WHERE Email=%s")
         values = (client_email,)
@@ -1008,7 +774,7 @@ def get_manager_password_info(client_email, temp_PassID):
         db.close()
         return [temp_UserID,manager]
     except Exception as e:
-        write_errors(traceback.format_exc(),"Getting manager password info")
+        connect.write_errors(traceback.format_exc(),"Getting manager password info")
         return ["FAILED",traceback.format_exc()] #this won't get read anyway, but worth writing error to file
 
 #only used by managers
@@ -1028,7 +794,7 @@ def remove_password_user(data):
             other_userID, other_manager = get_manager_password_info(user_email,temp_PassID)
             if other_manager == 1:
                 return "CANNOT REMOVE MANAGER"
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"DELETE FROM PasswordKeys WHERE UserID='{other_userID}' AND PassID='{temp_PassID}'")
             curs.close()
@@ -1038,7 +804,7 @@ def remove_password_user(data):
             send_email("SecureNet: Removed User", f"You have revoked access to a shared password for {user_email}. If this wasn't you, login to secure your account.", client_email)
             return "REMOVED USER"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Removing password user")
+            connect.write_errors(traceback.format_exc(),"Removing password user")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1069,7 +835,7 @@ def get_password_users(*args):
             temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
             if manager == 0:
                 return "NOT MANAGER"
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             if manager_only:  # only returns the users who are managers
                 curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=1")
@@ -1084,7 +850,7 @@ def get_password_users(*args):
             db.close()
             return user_info
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting password users")
+            connect.write_errors(traceback.format_exc(),"Getting password users")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1104,7 +870,7 @@ def delete_password_instance(data):
         if num_managers == "NOT MANAGER" or len(num_managers)>1:
             try:
                 temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
-                db = connect_to_db()
+                db = connect.connect_to_db()
                 curs = db.cursor()
                 curs.execute(f"DELETE FROM PasswordKeys WHERE UserID='{temp_UserID}' AND PassID='{temp_PassID}'")
                 curs.close()
@@ -1113,7 +879,7 @@ def delete_password_instance(data):
                 send_email("SecureNet: Deleted Password Instance", f"One of your passwords has been deleted. If this wasn't you, login to secure your account.", client_email)
                 return "DELETED PASSWORD INSTANCE"
             except Exception as e:
-                write_errors(traceback.format_exc(),"Deleting password instance")
+                connect.write_errors(traceback.format_exc(),"Deleting password instance")
                 return ["FAILED",traceback.format_exc()]
         else:
             try:
@@ -1128,7 +894,7 @@ def delete_password_instance(data):
                     data["passID"] = temp_PassID
                     data = add_manager(data)
                     if data == "ADDED MANAGER":
-                        db = connect_to_db()
+                        db = connect.connect_to_db()
                         curs = db.cursor()
                         temp_UserID, manager = get_manager_password_info(client_email,temp_PassID)
                         curs.execute(f"DELETE FROM PasswordKeys WHERE UserID='{temp_UserID}' AND PassID='{temp_PassID}'")
@@ -1140,7 +906,7 @@ def delete_password_instance(data):
                     else:
                         return data
             except Exception as e:
-                write_errors(traceback.format_exc(),"Deleting password instance and adding manager")
+                connect.write_errors(traceback.format_exc(),"Deleting password instance and adding manager")
                 return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1157,7 +923,7 @@ def update_password(data):
             manager = get_manager_password_info(client_email,temp_PassID)[1]
             if manager == 0:
                 return "NOT MANAGER"
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             if type == "Password":
                 new_info = Encryption.encrypt_for_db(new_info)
@@ -1168,7 +934,7 @@ def update_password(data):
             db.close()
             return "UPDATED PASSWORD"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Updating password")
+            connect.write_errors(traceback.format_exc(),"Updating password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1179,7 +945,7 @@ def get_pending_passwordkeys(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT PendingDownload FROM Users WHERE Email='{client_email}'")
             pending = curs.fetchone()[0]
@@ -1218,7 +984,7 @@ def get_pending_passwordkeys(data):
             db.close()
             return info_to_return
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting pending password keys")
+            connect.write_errors(traceback.format_exc(),"Getting pending password keys")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1230,7 +996,7 @@ def get_emails_sharing(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             query = "SELECT UserID, Forename, Names, Email FROM Users WHERE Email = %s"
             curs.execute(query, (email,))
@@ -1241,7 +1007,7 @@ def get_emails_sharing(data):
             except Exception as e:
                 return "NO USER"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting emails for sharing")
+            connect.write_errors(traceback.format_exc(),"Getting emails for sharing")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1252,7 +1018,7 @@ def get_public_key(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT PermanentClientPublicKey FROM Users WHERE UserID='{recipient_UserID}'")
             public_key = curs.fetchone()[0]
@@ -1260,7 +1026,7 @@ def get_public_key(data):
             db.close()
             return public_key
         except Exception as e:
-            write_errors(traceback.format_exc(),"Getting public key")
+            connect.write_errors(traceback.format_exc(),"Getting public key")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1276,7 +1042,7 @@ def share_password(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             sender_UserID = curs.fetchone()[0]
@@ -1321,7 +1087,7 @@ def share_password(data):
                 db.close()
                 return "SHARED PASSWORD"
         except Exception as e:
-            write_errors(traceback.format_exc(),"Sharing password")
+            connect.write_errors(traceback.format_exc(),"Sharing password")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1336,7 +1102,7 @@ def insert_pending_keys(data):
     authenticated = authenticate_session_key(session_key)
     if authenticated == True:
         try:
-            db = connect_to_db()
+            db = connect.connect_to_db()
             curs = db.cursor()
             curs.execute(f"SELECT UserID FROM Users WHERE Email='{client_email}'")
             temp_UserID = curs.fetchone()[0]
@@ -1377,7 +1143,7 @@ def insert_pending_keys(data):
                 return "NO ACTION"
             
         except Exception as e:
-            write_errors(traceback.format_exc(),"Inserting pending keys")
+            connect.write_errors(traceback.format_exc(),"Inserting pending keys")
             return ["FAILED",traceback.format_exc()]
     else:
         return authenticated
@@ -1401,12 +1167,8 @@ def receive_data():
         if header == "get_server_key":
             data_to_return = Encryption.get_server_key() #no data do can't error check
             flag = "encryption success"
-                
-        elif Encryption.validate_error_check(data["error_check"]):
-            if header == "reset_client_sharing_key":
-                data_to_return = Encryption.reset_client_sharing_keys(data)
 
-            elif header == "authenticate_password":
+            if header == "authenticate_password":
                 data_to_return = authenticate_password(data)
 
             elif header == "add_new_device":
@@ -1479,19 +1241,19 @@ def receive_data():
                 data_to_return = get_public_key(data)
 
             elif header == "update_public_keys":
-                data_to_return = Encryption.reset_client_sharing_keys(data)
+                data_to_return = reset_client_sharing_keys(data)
                     
             flag = "encryption success"
             
         else:
             flag = "encryption fail"
-            write_errors(data,"Error check")
+            connect.write_errors(data,"Error check")
             data_to_return = None
             
         
         client_public_key = json_data["client_public_key"]
         symmetric_key = Encryption.generate_symmetric_key()
-        write_errors(symmetric_key,"Symmetric Key to send")
+        connect.write_errors(symmetric_key,"Symmetric Key to send")
         dic_to_send = {
             "data": data_to_return,
             "error_check": Encryption.create_error_check(),
@@ -1508,10 +1270,10 @@ def receive_data():
         })
 
     except Exception as e:
-        write_errors(traceback.format_exc(),"Handle")
-        write_errors(encrypted_symmetric_key,"Handle: encrypted_symmetric_key")
-        write_errors(symmetric_key,"Handle: symmetric_key")
-        write_errors(data,"Handle: data")
+        connect.write_errors(traceback.format_exc(),"Handle")
+        connect.write_errors(encrypted_symmetric_key,"Handle: encrypted_symmetric_key")
+        connect.write_errors(symmetric_key,"Handle: symmetric_key")
+        connect.write_errors(data,"Handle: data")
         return jsonify({"data":["FAILED AT HANDLE",str(e)]})
 
 

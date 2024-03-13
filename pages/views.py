@@ -1,10 +1,10 @@
 from flet import *
-from pages.login import Login
-from pages.newdevice import Newdevice
-from pages.navbar import Navbar
-from pages.newaccount import Newaccount
-from pages.receive_code import Receivecode
-from pages.homepage import Home
+from pages.frames.login import Login
+from pages.frames.newdevice import Newdevice
+from pages.components.navbar import Navbar
+from pages.frames.newaccount import Newaccount
+from pages.frames.frameComponents.receive_code import Receivecode
+from pages.frames.homepage import Home
 from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
