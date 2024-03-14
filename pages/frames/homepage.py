@@ -185,7 +185,7 @@ class Home(UserControl):
         self.__page.update()
     
     def help(self, e=None):
-        self.go_to_url("https://youtu.be/2Q_ZzBGPdqE?si=4USxl1xyyCRNrStO")
+        self.go_to_url("https://github.com/BenCrook05/password_manager")
         
     def __scan_passwords(self):
         self.__main_container.content = Column(
