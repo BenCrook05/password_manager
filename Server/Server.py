@@ -12,9 +12,6 @@ import endToEnd_encryption as rsa
 from encryption_general import Encryption
 
 import connect
-
-import MySQLdb
-
 from datetime import datetime, timedelta, date
 
 import random
@@ -149,7 +146,8 @@ def create_new_user(data):
                 return "EMAIL ALREADY USED"
         new_device_code = ''.join(str(random.randint(0, 9)) for _ in range(6))
         password_hash = Encryption.encrypt_for_db(password_hash)
-        query = "INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey, NewDeviceCode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        query = """INSERT INTO Users(Forename, Names, Email, PasswordHash, DateOfBirth, PhoneNumber, Country, OpenDate, PermanentClientPublicKey, NewDeviceCode) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         values = (forename, names, client_email, password_hash, date_of_birth, phone_number, country, date.today(), permanent_public_key, new_device_code)
         curs.execute(query, values)
         curs.close()
@@ -196,7 +194,8 @@ def confirm_new_user(data):
         else:
             curs.close()
             db.close()
-            send_email("SecureNet: Attempted Account Authentication", "An attempt was made to authenticate a new account.If this wasn't you, login to secure your account", client_email)
+            send_email("SecureNet: Attempted Account Authentication", 
+                       "An attempt was made to authenticate a new account.If this wasn't you, login to secure your account", client_email)
             return "INCORRECT CODE"
     except Exception as e:
         connect.write_errors(traceback.format_exc(),"Confirming new user")
@@ -277,10 +276,12 @@ def confirm_device_code(data):
             db.commit()
             db.close()
             send_email("SecureNet: Authenticated Device", "Your device has been authenticated", client_email)
-            send_email("SecureNet: New Device", "A new device has been added to your account. If this wasn't you, login to secure your account", client_email)
+            send_email("SecureNet: New Device", 
+                       "A new device has been added to your account. If this wasn't you, login to secure your account", client_email)
             return "ADDED DEVICE"
         else:
-            send_email("SecureNet: Attempted Device Authentication", "An attempt was made to authenticate a new device. If this wasn't you, login to secure your account", client_email)
+            send_email("SecureNet: Attempted Device Authentication", 
+                       "An attempt was made to authenticate a new device. If this wasn't you, login to secure your account", client_email)
             return "INCORRECT CODE"
     except Exception as e:
         connect.write_errors(traceback.format_exc(),"Confirming device code")
@@ -334,7 +335,8 @@ def authenticate_password(data):
                 db.close()
                 return new_session_key(temp_DeviceID)
             except Exception as e:  #catch error and increase login attempts due to incorrect password
-                send_email("SecureNet: Attempted Login", "An attempt was made to login to your account. If this wasn't you, login to secure your account", client_email)
+                send_email("SecureNet: Attempted Login", 
+                           "An attempt was made to login to your account. If this wasn't you, login to secure your account", client_email)
                 increase_login_attempts(client_email)
                 #check whether account has been locked to return correct message
                 curs.execute(f"SELECT LoginAttempts FROM Users WHERE UserID='{temp_UserID}'")
@@ -373,10 +375,10 @@ def authenticate_session_key(client_session_key):
             key, date = key_date
             key = Encryption.decrypt_from_db(key)
             if str(key) == str(client_session_key):
-                # confirms session key hasn't expired an hour
-                # creates a datetime object from the date in string format from db
-                # adds 1 hour to this time using timedelta
-                # compares to the current datetime
+                """confirms session key hasn't expired an hour
+                creates a datetime object from the date in string format from db
+                adds 1 hour to this time using timedelta
+                compares to the current datetime"""
                 date_time_format = '%Y-%m-%d %H:%M:%S.%f'
                 current_datetime = datetime.now()
                 db_datetime = datetime.strptime(date, date_time_format)
@@ -534,7 +536,8 @@ def reset_client_password(data):
                     return "RESET PASSWORD"
             except Exception as e:
                 connect.write_errors(traceback.format_exc(),"Resetting client password - failed to match original password")
-                send_email("SecureNet: Attempted Password Reset", "An attempt was made to reset your password. If this wasn't you, login to secure your account", client_email)
+                send_email("SecureNet: Attempted Password Reset", 
+                           "An attempt was made to reset your password. If this wasn't you, login to secure your account", client_email)
                 return "UNAUTHENTICATED"
         except Exception as e:
             connect.write_errors(traceback.format_exc(),"Resetting client password")
@@ -673,7 +676,7 @@ def add_new_password(data):
                     return "PASSWORD ALREADY EXISTS"
             password = Encryption.encrypt_for_db(password)
             password_key = Encryption.encrypt_for_db(password_key)
-            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (%s, %s, %s, %s, %s)"  #avoid sql injection
+            query = "INSERT INTO Passwords(Password, URL, Title, Username, AdditionalInfo) VALUES (%s, %s, %s, %s, %s)"  
             values = (password, url, title, username, additional_info)
             curs.execute(query, values)
             temp_PassID = curs.lastrowid
@@ -709,7 +712,8 @@ def delete_password(data):
             curs.close()
             db.commit()
             db.close()
-            send_email("SecureNet: Deleted Password", f"Your password for {title} has been deleted. If this wasn't you, login to secure your account.", client_email)
+            send_email("SecureNet: Deleted Password", 
+                       f"Your password for {title} has been deleted. If this wasn't you, login to secure your account.", client_email)
             return "DELETED PASSWORD"
         except Exception as e:
             connect.write_errors(traceback.format_exc(),"Deleting password")
@@ -801,7 +805,8 @@ def remove_password_user(data):
             db.commit()
             db.close()
             send_email("SecureNet: Removed from Password", f"Your access to a shared password has been revoked.", user_email)
-            send_email("SecureNet: Removed User", f"You have revoked access to a shared password for {user_email}. If this wasn't you, login to secure your account.", client_email)
+            send_email("SecureNet: Removed User", 
+                       f"You have revoked access to a shared password for {user_email}. If this wasn't you, login to secure your account.", client_email)
             return "REMOVED USER"
         except Exception as e:
             connect.write_errors(traceback.format_exc(),"Removing password user")
@@ -837,10 +842,20 @@ def get_password_users(*args):
                 return "NOT MANAGER"
             db = connect.connect_to_db()
             curs = db.cursor()
-            if manager_only:  # only returns the users who are managers
-                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}' AND Manager=1")
-            else:  # returns all users
-                curs.execute(f"SELECT Email, Forename, Names FROM Users, PasswordKeys WHERE Users.UserID=PasswordKeys.UserID AND PasswordKeys.PassID='{temp_PassID}'")
+            if manager_only:
+                curs.execute("""
+                    SELECT Email, Forename, Names 
+                    FROM Users 
+                    INNER JOIN PasswordKeys ON Users.UserID = PasswordKeys.UserID 
+                    WHERE PasswordKeys.PassID = %s AND Manager = 1
+                    """, (temp_PassID,))
+            else:
+                curs.execute("""
+                    SELECT Email, Forename, Names 
+                    FROM Users 
+                    INNER JOIN PasswordKeys ON Users.UserID = PasswordKeys.UserID 
+                    WHERE PasswordKeys.PassID = %s
+                    """, (temp_PassID,))
             all_users = curs.fetchall()
             user_info = []
             for info in all_users:
@@ -876,7 +891,8 @@ def delete_password_instance(data):
                 curs.close()
                 db.commit()
                 db.close()
-                send_email("SecureNet: Deleted Password Instance", f"One of your passwords has been deleted. If this wasn't you, login to secure your account.", client_email)
+                send_email("SecureNet: Deleted Password Instance", 
+                           f"One of your passwords has been deleted. If this wasn't you, login to secure your account.", client_email)
                 return "DELETED PASSWORD INSTANCE"
             except Exception as e:
                 connect.write_errors(traceback.format_exc(),"Deleting password instance")
@@ -901,7 +917,9 @@ def delete_password_instance(data):
                         curs.close()
                         db.commit()
                         db.close()
-                        send_email("SecureNet: Deleted Password Instance", f"One of your passwords has been deleted and a new manager has been added. If this wasn't you, login to secure your account.", client_email)
+                        send_email("SecureNet: Deleted Password Instance", 
+                                   f"One of your passwords has been deleted and a new manager has been added. If this wasn't you, login to secure your account.", 
+                                   client_email)
                         return "DELETED PASSWORD INSTANCE and ADDED MANAGER"
                     else:
                         return data
@@ -1080,8 +1098,12 @@ def share_password(data):
                 curs.execute(f"UPDATE Users SET PendingDownload=1 WHERE UserID='{recipient_UserID}'")
                 curs.execute(f"SELECT Email FROM Users WHERE UserID='{recipient_UserID}'")
                 recipient_user_email = curs.fetchone()[0]
-                send_email("SecureNet: Shared Password", f"{client_email} has shared a password with you. Please log in to your account before the end of the month to download.", recipient_user_email)
-                send_email("SecureNet: Shared Password", f"You have shared a password with {recipient_user_email}. Note: The share key will expire at the end of the month.", client_email)
+                send_email("SecureNet: Shared Password", 
+                           f"{client_email} has shared a password with you. Please log in to your account before the end of the month to download.", 
+                           recipient_user_email)
+                send_email("SecureNet: Shared Password", 
+                           f"You have shared a password with {recipient_user_email}. Note: The share key will expire at the end of the month.", 
+                           client_email)
                 curs.close()
                 db.commit()
                 db.close()
@@ -1167,6 +1189,9 @@ def receive_data():
         if header == "get_server_key":
             data_to_return = Encryption.get_server_key() #no data do can't error check
             flag = "encryption success"
+            
+        elif Encryption.validate_error_check(data["error_check"]):
+            flag = "encryption success"
 
             if header == "authenticate_password":
                 data_to_return = authenticate_password(data)
@@ -1243,7 +1268,6 @@ def receive_data():
             elif header == "update_public_keys":
                 data_to_return = reset_client_sharing_keys(data)
                     
-            flag = "encryption success"
             
         else:
             flag = "encryption fail"
@@ -1253,7 +1277,6 @@ def receive_data():
         
         client_public_key = json_data["client_public_key"]
         symmetric_key = Encryption.generate_symmetric_key()
-        connect.write_errors(symmetric_key,"Symmetric Key to send")
         dic_to_send = {
             "data": data_to_return,
             "error_check": Encryption.create_error_check(),

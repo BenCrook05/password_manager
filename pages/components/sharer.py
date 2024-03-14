@@ -45,6 +45,7 @@ class Sharer(UserControl):
         self.__email_box.update()
 
     def __show_user_to_share(self,e):
+        #download user details from server if exist and display to user to confirm
         if not self.__processing:
             self.__processing = True
             self.__stack.controls.append(ProRing())
@@ -61,7 +62,8 @@ class Sharer(UserControl):
                     self.__processing = False
                 else:
                     self.__recipient_userID, self.__recipient_forename, self.__recipient_name, self.__recipient_email = data
-                    self.__col.controls = self.__col.controls[:4]  #remove unwanted controls from the column keeping the image and buttons
+                    self.__col.controls = self.__col.controls[:4]  
+                    #remove unwanted controls from the column keeping the image and buttons
                     self.__confirm_button = ElevatedButton("Confirm", on_click=self.__confirm_access_rights)
                     self.__return_button = ElevatedButton("Return", on_click=self.__back)
                     self.__forename_box = TextField(
@@ -121,7 +123,7 @@ class Sharer(UserControl):
                 self.__processing = False
           
     def __confirm_access_rights(self,e):
-        ##check manager choice then confirm share
+        #receive and store manager choice
         self.__col.controls = self.__col.controls[:4]
         self.__confirm_send_button = ElevatedButton("Confirm", on_click=self.__confirm_to_send)
         self.__manager_checkbox = Checkbox(value=False)
@@ -154,6 +156,7 @@ class Sharer(UserControl):
           
             
     def __confirm_to_send(self,e):
+        #check user details
         self.__final_confirm_button = ElevatedButton("Confirm", on_click=self.__final_send_password)
         self.__recipient_is_manager = 1 if self.__manager_checkbox.value else 0
         self.__col.controls = self.__col.controls[:4]
@@ -182,10 +185,12 @@ class Sharer(UserControl):
         
         
     def __final_send_password(self, e):
-        # self.__alert.close()
+        #send password to recipient
         self.__stack.controls.append(ProRing())
         self.__stack.update()
-        data = self.__homepage.get_manager().share_password_confirm(self.__passID, self.__recipient_email, self.__recipient_is_manager)
+        data = self.__homepage.get_manager().share_password_confirm(
+            self.__passID, self.__recipient_email, self.__recipient_is_manager, 
+            recipient_UserID=self.__recipient_userID)
         data = data[0].upper() + data[1:].lower()
         self.__homepage.get_page().snack_bar = SnackBar(
             content=Text(data,color=TEXT_COLOUR),

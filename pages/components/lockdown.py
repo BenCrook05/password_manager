@@ -81,8 +81,13 @@ class Lockdown(UserControl):
                                         size=80,
                                         opacity=0.8,
                                     ),
-                                    Text("You will only be able to recover the password from this device.", size=14, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
-                                    Text("Are you sure you want to lockdown this password?", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
+                                    Text("You will only be able to recover the password from this device.", 
+                                         size=14, weight=FontWeight.BOLD, font_family="Afacad", 
+                                         color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
+                                    
+                                    Text("Are you sure you want to lockdown this password?", 
+                                         size=15, weight=FontWeight.BOLD, font_family="Afacad", 
+                                         color=TEXT_COLOUR, text_align=TextAlign.CENTER,),
                                     
                                 ],
                                 height=200,

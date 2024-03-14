@@ -35,8 +35,7 @@ class ViewUsers(UserControl):
         if not self.__processing:
             self.__processing = True
             data = self.__homepage.get_manager().add_manager(self.__passID,manager_email)
-            print(f"passid: {self.__passID}")
-            print(data)
+
             if data == "ADDED MANAGER":
                 self.__homepage.get_page().snack_bar = SnackBar(
                     content=Text("Manager added",color=TEXT_COLOUR),
@@ -113,13 +112,15 @@ class ViewUsers(UserControl):
         managers = self.__homepage.get_manager().get_password_users(self.__passID, manager=True)
         users = self.__homepage.get_manager().get_password_users(self.__passID)
         texts = list(map(
-            lambda manager: Text(value=f"{manager[1]} {manager[2]}: {manager[0]}", size=13, font_family="Afacad", color=TEXT_COLOUR),
+            lambda manager: Text(value=f"{manager[1]} {manager[2]}: {manager[0]}", 
+                                 size=13, font_family="Afacad", color=TEXT_COLOUR),
             managers
         ))
         self.__managers_container.content.controls.extend(texts)
         
         texts = list(map(
-            lambda user: Text(value=f"{user[1]} {user[2]}: {user[0]}", size=13, font_family="Afacad", color=TEXT_COLOUR),
+            lambda user: Text(value=f"{user[1]} {user[2]}: {user[0]}", size=13, 
+                              font_family="Afacad", color=TEXT_COLOUR),
             users
         ))
         self.__users_container.content.controls.extend(texts)

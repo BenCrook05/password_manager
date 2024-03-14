@@ -37,7 +37,6 @@ class PasswordRow(UserControl):
         self.__slider.update()
     
     def build(self):
-        print(self.__rating)
         self.__slider = Slider(
             max=1,
             value=self.__rating,
@@ -51,7 +50,8 @@ class PasswordRow(UserControl):
         hex_color = "#{:02X}{:02X}{:02X}".format(int(red), int(green), int(blue))
         self.__slider.thumb_color = hex_color
         self.__slider.active_color = hex_color
-        self.__repeated_alert = Text(value="             ",color="#FF0000",
+        self.__repeated_alert = Text(value="             ",color="#FF0000", 
+                                     #needs filler if no repeat alert for alignment
                                      size=15,weight=FontWeight.BOLD,font_family="Afacad")
         
         try:
@@ -63,14 +63,13 @@ class PasswordRow(UserControl):
             db.close()
             self.__img = Image(src_base64=image_content, height=20, width=20)
         except Exception as e:
-            print(e)
             self.__img = Icon(icons.PERSON_ROUNDED,size=20,color=TEXT_COLOUR)
             
         if self.__repeated:
-            print(f"repeat detected: {self.__title}")
             self.__slider.thumb_color = "#FF0000"
             self.__slider.active_color = "#FF0000"
             self.__repeated_alert.value = "Repeat!"
+            
         self.__container = Container(
             content=Row(
                 controls=[
@@ -120,7 +119,6 @@ class Scanner(UserControl):
         self.__data = data
         self.__back_button = IconButton()
         self.__col = Column()
-        self.__stack = Stack()
         self.__password_row_list = []
         self.__rating_container = Column()
     
@@ -136,7 +134,7 @@ class Scanner(UserControl):
     def build(self):
         data = self.__homepage.get_manager().scan_passwords()
         self.__password_row_list = list(
-            map(
+            map( #map to a password row for every password
                 lambda password: PasswordRow(
                     username=password["username"],
                     title=password["title"],
@@ -193,8 +191,7 @@ class Scanner(UserControl):
             horizontal_alignment=CrossAxisAlignment.CENTER,
             
         )
-        # if len(self.__password_row_list)>5:
-        #     self.__col.scroll=ScrollMode.AUTO,
+
         for info_row in self.__password_row_list:
             if info_row.get_type() == "password":
                 self.__rating_container.controls.append(info_row)

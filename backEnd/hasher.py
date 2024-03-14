@@ -45,3 +45,4 @@ class Hash:
         key = base64.urlsafe_b64encode(kdf.derive(password))
         return key
     
+    

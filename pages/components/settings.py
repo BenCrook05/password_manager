@@ -21,7 +21,7 @@ class Settings(UserControl):
         self.__lockdown_switch = ElevatedButton()
         self.__col = Column()
         self.__stack = Stack()
-        self.__start_mode = None
+        self.__start_mode = False
         
     def __back(self,e):
         self.__homepage.get_navrail().set_selected_index(0)
@@ -37,8 +37,10 @@ class Settings(UserControl):
             if self.__thememode_switch.value != self.__start_mode:
                 if self.__thememode_switch.value:
                     Colours().set_dark_mode()
+                    self.__start_mode = True
                 else:
                     Colours().set_light_mode()
+                    self.__start_mode = False
         
             self.__stack.controls.pop()
             self.__stack.update()
@@ -163,6 +165,7 @@ class Settings(UserControl):
             reveal_option=True,
         )
         
+        #set startmode
         thememode = Colours().get_theme()
         if thememode == ThemeMode.LIGHT:
             self.__start_mode = False
@@ -230,7 +233,6 @@ class Settings(UserControl):
             spacing=20,
             alignment=MainAxisAlignment.START,
             horizontal_alignment=CrossAxisAlignment.START,
-            # scroll=ScrollMode.AUTO,
         )
         self.__stack = Stack(
             controls=[

@@ -139,7 +139,8 @@ class Application:
                 server_public_key = Application.get_server_key()
                 datadic["server_public_key"] = server_public_key
                 datadic["server_key_day"] = datetime.now().day
-            data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
+            data = pr.add_new_user(server_public_key,forename,names,email,stored_password_hash,
+                                   date_of_birth,phone_number,country,permanent_public_key,mac_address_hash)
             return data
         else:
             return "INVALID EMAIL"

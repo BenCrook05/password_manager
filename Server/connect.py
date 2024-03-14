@@ -21,5 +21,6 @@ def write_errors(error_code="None",function_name="None"):
     with open("/home/BenCrook/mysite/error.txt", "r") as file:
         existing_content = file.read()
     with open("/home/BenCrook/mysite/error.txt", "w") as file:
-        file.write(f"\n\nFunction attempt: {function_name}\nError code: {str(error_code)}\nTime: {datetime.now().replace(second=0, microsecond=0)}")
+        file.write(f"\n\nFunction attempt: {function_name}\nError code: 
+                   {str(error_code)}\nTime: {datetime.now().replace(second=0, microsecond=0)}")
         file.write(existing_content)

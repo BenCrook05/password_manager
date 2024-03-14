@@ -9,7 +9,8 @@ from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
 
-
+#store virtual pages to return to page.route
+#stored as dictionary
 def views_handler(page, data):
     return {
         '/':View(

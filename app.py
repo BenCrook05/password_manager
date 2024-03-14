@@ -5,6 +5,8 @@ from datetime import datetime
 import traceback
 import sqlite3
 from backEnd.loginlogic import Application
+from multiprocessing import Process
+
 
 def main(page: Page):
     page.window_title_bar_hidden = True
@@ -24,7 +26,7 @@ def main(page: Page):
     page.window_prevent_close = True
     page.window_resizable = False
     data = {}
-
+    processes = []
 
     def on_window_event(e):
         if e == "close":
@@ -41,15 +43,21 @@ def main(page: Page):
             )
             page.update()
             if page.route == "/":
+                for process in processes:
+                    try:
+                        process.terminate()
+                        processes.pop()
+                    except Exception as e:
+                        print(traceback.format_exc())
+                        pass
                 starttime = datetime.now()
                 page.views[-1].controls[1].attempt_auto_login()
                 print(f"Time to load: {datetime.now() - starttime}")
                 
             elif page.route == "/Home":
-                page.views[-1].controls[1].initialise()
-                page.views[-1].controls[1].run_background_tasks()
+                processes.append(page.views[-1].controls[1].initialise())
+                processes.append(Process(target = page.views[-1].controls[1].run_background_tasks()))
         except:
-            print(traceback.format_exc())
             Application.delete_saved_login_data()
             page.go('/')
 

@@ -59,7 +59,9 @@ class PasswordAdder(UserControl):
                 self.__processing = False
                 return
                 
-            self.__homepage.get_manager().add_new_password(title,url,username,additional_info,password)
+            self.__homepage.get_manager().add_new_password(title,url,
+                                                           username,additional_info,
+                                                           password)
             self.__homepage.get_page().snack_bar = SnackBar(
                 content=Text("New Password Added",color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
@@ -119,7 +121,8 @@ class PasswordAdder(UserControl):
         )
         self.__title_input = Input("TITLE_ROUNDED","Title")
         self.__url_input = Input("CAST_CONNECTED_ROUNDED","URL",max_length=128)
-        self.__username = Input("PERSON_ROUNDED","Username",max_length=64, default_value=self.__homepage.get_manager().get_email())
+        self.__username = Input("PERSON_ROUNDED","Username",max_length=64, 
+                                default_value=self.__homepage.get_manager().get_email())
         self.__password = Input("LOCK_ROUNDED","Password",hide=True,reveal_option=True)
         self.__additional_info = Input("INFO_ROUNDED","Additional Info",max_length=256)
 

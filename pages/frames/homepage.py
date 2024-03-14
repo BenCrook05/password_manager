@@ -161,11 +161,6 @@ class Home(UserControl):
             self.logout()
     
     def logout(self):
-        if self.__unable_to_logout:
-            self.__main_container.content = ProRing()
-            self.__main_container.update()
-        while self.__unable_to_logout:
-            pass
         self.__data = {}
         db=sqlite3.connect(rf"assets\assetdata.db")
         curs = db.cursor()
@@ -173,6 +168,7 @@ class Home(UserControl):
         curs.close()
         db.commit()
         db.close()
+        self.__manager.refresh()
         self.__page.go('/')
     
     def copy_to_clipboard(self,data):

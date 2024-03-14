@@ -65,7 +65,14 @@ class Newaccount(UserControl):
                 if Application.check_password_is_suitable(password):
                     self.__stack.controls.append(ProRing())
                     self.__stack.update()
-                    data = Application.create_new_account(self.__first_name,self.__last_name,self.__email,password,self.__date_of_birth,self.__phone_number,self.__country,self.__data)
+                    data = Application.create_new_account(
+                        self.__first_name,
+                        self.__last_name,
+                        self.__email,password,
+                        self.__date_of_birth,
+                        self.__phone_number,
+                        self.__country,
+                        self.__data)
                     if data == "CODE SENT":
                         self.__data["email"] = self.__email
                         self.__data["password"] = password
@@ -193,8 +200,10 @@ class Newaccount(UserControl):
                 self.__try_again()
                 return
             
-            self.__password_input = Input("LOCK_OPEN_ROUNDED","Password",True,reveal_option=True,max_length=64)
-            self.__confirm_password_input = Input("LOCK_OPEN_ROUNDED","Re-enter Password",True,reveal_option=True,max_length=64)
+            self.__password_input = Input("LOCK_OPEN_ROUNDED","Password",
+                                          True,reveal_option=True,max_length=64)
+            self.__confirm_password_input = Input("LOCK_OPEN_ROUNDED","Re-enter Password",
+                                                  True,reveal_option=True,max_length=64)
             self.__confirm_button_passwords = ElevatedButton(
                 icon = icons.PERSON_ADD_ALT_1_ROUNDED,
                 text="Confirm",
@@ -214,7 +223,7 @@ class Newaccount(UserControl):
                         Column(
                             controls=[
                                 Image(
-                                    r"assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
+                                    r"assets\Images\png\logo-no-background.png", 
                                     width=300, 
                                     fit=ImageFit.CONTAIN,
                                 )
@@ -279,7 +288,7 @@ class Newaccount(UserControl):
                     Column(
                         controls=[
                             Image(
-                                r"assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
+                                r"assets\Images\png\logo-no-background.png", 
                                 width=300, 
                                 fit=ImageFit.CONTAIN,
                             )

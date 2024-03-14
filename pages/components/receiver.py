@@ -47,7 +47,8 @@ class NewPassword(UserControl):
                 Column(
                     controls=[
                         Text(self.__title, size=19, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
-                        Text(value=f"Sender: {self.__sender_name} {self.__sender_surname}: {self.__sender_email}", size=13, font_family="Afacad", color=TEXT_COLOUR),
+                        Text(value=f"Sender: {self.__sender_name} {self.__sender_surname}: 
+                             {self.__sender_email}", size=13, font_family="Afacad", color=TEXT_COLOUR),
                     ],
                     alignment=MainAxisAlignment.START,
                     horizontal_alignment=CrossAxisAlignment.START,
@@ -94,7 +95,8 @@ class ReceiveShared(UserControl):
             for element in self.__receiving_password_list:
                 element.attempt_confirm()
             self.__homepage.get_page().snack_bar = SnackBar(
-                content=Text("Accepted passwords have been added to your account",color=TEXT_COLOUR),
+                content=Text("Accepted passwords have been added to your account",
+                             color=TEXT_COLOUR),
                 bgcolor=BACKGROUND_COLOUR_2,
                 elevation=5,
                 margin=5,
@@ -132,7 +134,8 @@ class ReceiveShared(UserControl):
             self.__col.controls = self.__col.controls[:4]
             self.__col.controls.extend([
                 Divider(height=3, color="transparent"),
-                Text("Select the passwords you would like to accept", size=15, weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
+                Text("Select the passwords you would like to accept", size=15, 
+                     weight=FontWeight.BOLD, font_family="Afacad", color=TEXT_COLOUR),
                 Divider(height=40),
                 Row(
                     controls=[
@@ -145,7 +148,12 @@ class ReceiveShared(UserControl):
                 )
             ])
             for element in data:
-                self.__receiving_password_list.append(NewPassword(passID=element[0], title=element[1], sender_email=element[2], sender_name=element[3], sender_surname=element[4], homepage=self.__homepage))
+                self.__receiving_password_list.append(NewPassword(passID=element[0], 
+                    title=element[1], 
+                    sender_email=element[2], 
+                    sender_name=element[3], 
+                    sender_surname=element[4], 
+                    homepage=self.__homepage))
                 self.__col.controls.extend([
                     self.__receiving_password_list[-1], #add the last element of the list
                     Divider(height=2,color=BACKGROUND_COLOUR_2)

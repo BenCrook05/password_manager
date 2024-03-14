@@ -61,7 +61,7 @@ class Input(UserControl):
         if self.__hint == "Date of Birth":
             self.__validate_date(e)
             
-    def __validate_date(self,e):
+    def __validate_date(self,e): #only called if hint is "Date of Birth"
         date = self.__textfield.value
         if len(date) >= 3:
             if date[2] != "-":

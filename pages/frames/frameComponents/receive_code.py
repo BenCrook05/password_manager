@@ -38,7 +38,6 @@ class Receivecode(UserControl):
             self.__stack.update()
             
             data = Application.validate_new_account(self.__email, self.__code_input.value, self.__data)
-            print(data)
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS"]:
                 self.__page.go('/Home')
             else:
@@ -61,7 +60,6 @@ class Receivecode(UserControl):
             self.__stack.update()
             
             data = Application.login_new_device_confirm(self.__email, self.__code_input.value, self.__data)
-            print(data)
             if data not in ["UNAUTHENTICATED","ERROR","TOO MANY ATTEMPTS","INCORRECT CODE"]:
                 self.__page.go('/Home')
             else:

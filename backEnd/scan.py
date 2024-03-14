@@ -137,7 +137,6 @@ class PasswordGenerator:
             password.append(random.choice(random.choice(contents)))
         for i in range (4,len(password)+1,5):
             password.insert(i,'-')
-        print(password)
         password = ''.join(str(item) for item in password)
         return password
 

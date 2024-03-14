@@ -8,7 +8,6 @@ from assets.colours import Colours
 BACKGROUND_COLOUR, THEME_COLOUR, TEXT_COLOUR, BACKGROUND_COLOUR_2= Colours().get_colours()
 
 def fetch_favicon(url):
-    print("Loading favicon")
     size=64
     favicon_url = f"https://www.google.com/s2/favicons?sz={size}&domain={url}"
     try:
@@ -18,7 +17,7 @@ def fetch_favicon(url):
         else:
             raise requests.RequestException
     except requests.RequestException as e:
-        print(f"Request failed for URL {url}: {e}")
+        # print(f"Request failed for URL {url}: {e}")
         return None
 
 class PasswordCard(UserControl):
@@ -64,8 +63,8 @@ class PasswordCard(UserControl):
         self.__card.update()
         
     def download_icon(self):
-        print("Downloading icon")
         #prevents loading favicon multiple times for same card
+        #only called from homepage once card is built
         self.__card.content.content.controls[0].controls.remove(self.__img)
         try:  # first tries to get icon data from data object
             self.__img = self.__data["self.__url"]
@@ -82,12 +81,14 @@ class PasswordCard(UserControl):
                 self.__data[self.__url] =  self.__img
                     
             except Exception as e:  # if no icon data on the computer yet, uses API
-                # print(e)
                 favicon_content = fetch_favicon(self.__url)
                 if favicon_content:
+                    
+                    #converts icon data to base64
                     favicon_content = base64.b64encode(favicon_content).decode("utf-8")
                     self.__img = Image(src_base64=favicon_content, height=32, width=32)
                     
+                    #saves icon data to file
                     db = sqlite3.connect(rf"assets\assetdata.db")
                     curs = db.cursor()
                     curs.execute('CREATE TABLE IF NOT EXISTS Icons(URL VARCHAR(128) primary key, Icon VARCHAR(8192))')
@@ -100,6 +101,7 @@ class PasswordCard(UserControl):
                 else:
                     self.__img = Icon(icons.PERSON, color=TEXT_COLOUR, size=32)
                     self.__data[self.__url] =  self.__img
+                    
         self.__card.content.content.controls[0].controls.insert(1,self.__img)
         self.__card.update()
         
@@ -132,8 +134,10 @@ class PasswordCard(UserControl):
                                     VerticalDivider(color="transparent",width=6),
                                     Column(
                                         controls=[
-                                            Text(self.__showing_title,size=19,weight=FontWeight.BOLD,font_family="Afacad",color=TEXT_COLOUR),
-                                            Text(self.__showing_username,size=13, opacity=0.7,color=TEXT_COLOUR),
+                                            Text(self.__showing_title,size=19,weight=FontWeight.BOLD,
+                                                 font_family="Afacad",color=TEXT_COLOUR),
+                                            Text(self.__showing_username,size=13, opacity=0.7,
+                                                 color=TEXT_COLOUR),
                                         ],
                                         alignment=MainAxisAlignment.CENTER,
                                         horizontal_alignment=CrossAxisAlignment.START,
@@ -205,7 +209,8 @@ class InfoCard(UserControl):
                 border_radius=10,
                 content=Row(
                     controls=[
-                        Text(self.__showing_title,size=20,weight=FontWeight.BOLD,font_family="Afacad",color=TEXT_COLOUR),
+                        Text(self.__showing_title,size=20,weight=FontWeight.BOLD,
+                             font_family="Afacad",color=TEXT_COLOUR),
                         Text("")
                     ],
                     alignment=MainAxisAlignment.START,

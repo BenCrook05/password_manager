@@ -101,8 +101,8 @@ class Updater(UserControl):
                 
             if updated:
                 for update_query in update_list:
-                    print(f"updating {update_query[2]} to {update_query[1]} for {update_query[0]}")
-                    self.__homepage.get_manager().update_password(update_query[0],update_query[1],update_query[2])
+                    self.__homepage.get_manager().update_password(
+                        update_query[0],update_query[1],update_query[2])
                 self.__homepage.refresh()
     
     def __back(self,e):
@@ -162,7 +162,6 @@ class Updater(UserControl):
             self.__img = Image(src_base64=image_content, height=50, width=50)
             
         except Exception as e:
-            print(e)
             self.__img = Icon(icons.PERSON_ROUNDED, color=TEXT_COLOUR, size=50)
         
         self.__title_input_field = TextField(

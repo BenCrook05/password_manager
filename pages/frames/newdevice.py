@@ -94,10 +94,12 @@ class Newdevice(UserControl):
     def build(self):
         self.__back_button = Container(
             padding=5,
-            content=IconButton(icon = icons.ARROW_BACK_IOS_NEW_ROUNDED, on_click=self.__return_to_login)
+            content=IconButton(icon = icons.ARROW_BACK_IOS_NEW_ROUNDED, 
+                               on_click=self.__return_to_login)
         )
         self.__email_input = Input("PERSON_ROUNDED","Email",focus=True)
-        self.__password_input = Input("LOCK_OPEN_ROUNDED","Password",True,reveal_option=True)
+        self.__password_input = Input("LOCK_OPEN_ROUNDED","Password",True,
+                                      reveal_option=True)
         self.__send_code_button = ElevatedButton(
             icon = icons.SEND_ROUNDED,
             text="Send Code",
@@ -118,7 +120,8 @@ class Newdevice(UserControl):
                     Column(
                         controls=[
                             Image(
-                                r"assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
+                                r"assets\Images\png\logo-no-background.png", 
+                                #need to use raw string to avoid syntax warning
                                 width=300, 
                                 fit=ImageFit.CONTAIN,
                             )
@@ -130,7 +133,8 @@ class Newdevice(UserControl):
                         horizontal_alignment=CrossAxisAlignment.CENTER,
                         spacing=5,
                         controls = [
-                            Text(value="Verify Device",size=23, weight=FontWeight.BOLD, color=TEXT_COLOUR),
+                            Text(value="Verify Device",size=23, 
+                                 weight=FontWeight.BOLD, color=TEXT_COLOUR),
                             Divider(height=5, color="transparent"),
                             Text(value="Sign into a pre-existing account from a new device", 
                                     size=13, color=TEXT_COLOUR),

@@ -34,7 +34,6 @@ class Login(UserControl):
         saved_data = Application.attempt_get_saved_data()
         try:
             if saved_data:
-                print(f"saved data: {saved_data}")
                 email, password = saved_data
                 self.__stack.controls.pop()
                 self.__stack.update()
@@ -167,7 +166,8 @@ class Login(UserControl):
                     Column(
                         controls=[
                             Image(
-                                r"assets\Images\png\logo-no-background.png", #need to use raw string to avoid syntax warning
+                                r"assets\Images\png\logo-no-background.png", 
+                                #need to use raw string to avoid syntax warning
                                 width=300, 
                                 fit=ImageFit.CONTAIN,
                             )

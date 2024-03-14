@@ -55,7 +55,8 @@ class Manager():
         self.__set_server_key() 
         stored_password_hash = Hash.create_hash(self.__password.encode('utf-8'), salt_type=self.__email)
         comparitive_password_hash = Hash.create_hash(stored_password_hash.encode('utf-8'))
-        data = pr.authenticate_password(self.__server_public_key,self.__email,self.__mac_address_hash, comparitive_password_hash)
+        data = pr.authenticate_password(self.__server_public_key,
+                                        self.__email,self.__mac_address_hash, comparitive_password_hash)
         if data not in ["UNAUTHENTICATED","FAILED","ERROR","TOO MANY ATTEMPTS"]:
             self.__session_key = data
             return data
@@ -67,14 +68,16 @@ class Manager():
         #recreate sharing keys (for new month) and upload to server
         e, d, n = self.__get_client_sharing_keys()
         new_public_key = f"{e}-{n}"
-        data = pr.reset_client_sharing_keys(self.__server_public_key,self.__session_key,new_public_key, self.__email)
+        data = pr.reset_client_sharing_keys(self.__server_public_key,
+                                            self.__session_key,new_public_key, self.__email)
 
     def validate_client_public_key(self):
         #checks public key isn't outdated
         #derives public key from current month and compares to public key retrieved from server
         try:
             if not self.__userID:
-                self.__userID = pr.get_emails_sharing(self.__server_public_key,self.__session_key,self.__email)[0]
+                self.__userID = pr.get_emails_sharing(
+                    self.__server_public_key,self.__session_key,self.__email)[0]
             client_public_key = pr.get_public_key(self.__server_public_key,self.__session_key,self.__userID)
             server_e, server_n = client_public_key.split('-')
             e, d, n = self.__get_client_sharing_keys()
@@ -85,6 +88,7 @@ class Manager():
             self.__reset_client_sharing_keys()
         
     def get_all_passwords_full(self):
+        #download all passwords at once (not currently used)
         passId_list = list(map(lambda x: x.get_passID(), self.__passwords))
         threads = [Thread(target=self.get_specific_password_info, args=(obj,)) for obj in passId_list]
         for thread in threads:
@@ -93,6 +97,7 @@ class Manager():
             thread.join()
             
     def get_all_managers_users(self):
+        #download all passwords at once (not currently used)
         passId_list = list(map(lambda x: x.get_passID(), self.__passwords))
         threads = [Thread(target=self.get_password_users, args=(obj,)) for obj in passId_list]
         threads += [Thread(target=self.get_password_users, args=(obj, True)) for obj in passId_list]
@@ -101,8 +106,8 @@ class Manager():
         for thread in threads:
             thread.join()
         
-        
     def refresh(self):
+        #clears memory if user logs out
         for password in self.__passwords:
             del password
         
@@ -129,7 +134,9 @@ class Manager():
             data_to_return = []
             for password_info in data:
                 self.__pending_passwords.append(password_info)
-                data_to_return.append(password_info[0:2] + password_info[4:7]) #returns passID, title, sender_email, sender_name, sender_surname
+                #returns passID, title, sender_email, sender_name, sender_surname
+                data_to_return.append(password_info[0:2] + password_info[4:7]) 
+                
             return data_to_return #in form of 2d array
         
     def accept_pending_share(self,passID,accept):
@@ -139,16 +146,18 @@ class Manager():
                 encrypted_symmetric_key = element[7]
                 e, d, n = self.__get_client_sharing_keys()
                 symmetric_key = Decrypt.decrypt_symmetric_key_sharing(encrypted_symmetric_key, d, n)
-                print("Symmetric key decrypted: ", symmetric_key)
                 #checks the decrypted symmetric key is valid
+                
                 #if not, cancel and instead reject pending share
                 if len(symmetric_key) > 21:
-                    pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,encrypted_password_key,"Reject")
+                    pr.insert_pending_keys(self.__server_public_key,self.__session_key,
+                                           self.__email,passID,encrypted_password_key,"Reject")
+                    
                 #otherwise decrypt password key using symmetric key and re encrypt using client permanent key
                 password_key = Decrypt.decrypt_password_key_to_share(encrypted_password_key, symmetric_key)
-                print("Password key decrypted: ", password_key)
                 password_key = Encrypt.encrypt_password_key(password_key, self.__client_permanent_key)
-                data = pr.insert_pending_keys(self.__server_public_key,self.__session_key,self.__email,passID,password_key,accept)
+                data = pr.insert_pending_keys(self.__server_public_key,self.__session_key,
+                                              self.__email,passID,password_key,accept)
                 self.__pending_passwords.remove(element)
                 return data
             
@@ -162,7 +171,7 @@ class Manager():
     def import_passwords(self, full = False, iterations=0):
         #gets all passwords when user logs in
         #stores as list of password objects
-        # self.__passwords = []
+        #temporary list used to avoid non-existance of passwords causing error 
         new_passwords = []
         self.__scanned_passwords = None
         password_data = pr.get_password_overview(self.__server_public_key,self.__session_key,self.__email,full)
@@ -183,12 +192,16 @@ class Manager():
                     decrypted_password = Decrypt.decrypt_password(Password, decrypted_password_key)
                     #infos don't have a url so check if exists to determine type of passinfo
                     if URL == "": 
-                        new_passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,decrypted_password_key,users_list,managers_list))
+                        new_passwords.append(Pw.Info(PassID,Title,Manager,decrypted_password,
+                                                     decrypted_password_key,users_list,managers_list))
                     else:
-                        new_passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,decrypted_password,decrypted_password_key,AdditionalInfo,users_list,managers_list))
+                        new_passwords.append(Pw.Password(PassID,Title,URL,Username,Manager,
+                                                         decrypted_password,decrypted_password_key,
+                                                         AdditionalInfo,users_list,managers_list))
                 except Exception as e:
                     success = False
                     error = e
+                    
             if not success:
                 self.__passwords = new_passwords
                 #error has occured, but all other passwords are still downloaded (otherwise a single error would cause app to be unusable)     
@@ -196,6 +209,8 @@ class Manager():
             else:
                 self.__passwords = new_passwords
                 return "SUCCESS"
+            
+            
         #only import overviews to reduce tranmission time and reduce load up time
         else:
             for single_password in password_data:
@@ -224,6 +239,7 @@ class Manager():
                 data_to_return.append(password.get_summary_inc_passID())
         return data_to_return
     
+    
     def get_infos(self):
         data_to_return = []
         for password in self.__passwords:
@@ -233,6 +249,7 @@ class Manager():
                 
     def get_all(self):
         return [password.get_summary_inc_passID() for password in self.__passwords]
+
 
     def export_all(self, iterations=0, download_csv=False):
         #download basic password info from the server for scanning or exporting passwords
@@ -257,7 +274,6 @@ class Manager():
                
     def __generate_csv(self, password_list):
         try:
-            print("password_list: ", password_list)
             password_list = list(map(lambda x: [x[4],x[1]], password_list))
             #removes passwords without a url (infos) 
             password_list = [password for password in password_list if password[0] != ""]
@@ -281,7 +297,6 @@ class Manager():
                 subprocess.Popen(["explorer", os.path.join(os.path.expanduser("~"), "Downloads")])
             return True
         except Exception as e:
-            print(traceback.format_exc())
             return False
     
         
@@ -309,17 +324,16 @@ class Manager():
             return data
             
     def get_specific_password_info(self,passID, iterations=0):
-        #can use a for loop as operation in each loop is very quick
-        #not likely to be more than 100 passwords
-        #password list is not ordered
-        #so would require sort and more operations to use other search
-        #therefore linear search is efficient enough
+        """can use a for loop as operation in each loop is very quick
+        not likely to be more than 100 passwords
+        password list is not ordered
+        so would require sort and more operations to use other search
+        therefore linear search is efficient enough"""
         for password in self.__passwords:
             if str(password.get_passID()) == str(passID): #only allows user to request passwords which they have access to
-                print("Getting specific password info")
                 data = password.get_password(client_email=self.__email,session_key=self.__session_key,
-                                             server_public_key=self.__server_public_key,client_permanent_key=self.__client_permanent_key)  
-                print("Data: ", data)
+                                             server_public_key=self.__server_public_key,
+                                             client_permanent_key=self.__client_permanent_key)  
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.get_specific_password_info(passID,iterations=1)
@@ -335,7 +349,8 @@ class Manager():
     def get_password_additonal_info(self,passID, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.get_additional_info(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                data = password.get_additional_info(client_email=self.__email,session_key=self.__session_key,
+                                                    server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.get_password_additonal_info(passID,iterations=1)
@@ -346,7 +361,8 @@ class Manager():
     def delete_password(self,passID, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.delete_password(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                data = password.delete_password(client_email=self.__email,session_key=self.__session_key,
+                                                server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.delete_password(passID,iterations=1)
@@ -358,35 +374,48 @@ class Manager():
     def delete_password_instance(self,passID,new_manager_email=None, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                managers = password.get_password_managers(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                managers = password.get_password_managers(client_email=self.__email,session_key=self.__session_key,
+                                                          server_public_key=self.__server_public_key)
                 if managers in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.delete_password_instance(passID,new_manager_email,iterations=1)
                     else:
                         return "UNAUTHENTICATED"
                 elif managers == "NOT MANAGER":
-                    data = password.delete_password_instance(client_email=self.__email,new_manager_email=None,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                    data = password.delete_password_instance(client_email=self.__email,
+                                                        new_manager_email=None,
+                                                        session_key=self.__session_key,
+                                                        server_public_key=self.__server_public_key)
                     return data[0:23]
+                
                 else:
-                    if len(managers) > 1:   #will cause exception if no managers because NoneType
-                        data = password.delete_password_instance(client_email=self.__email,new_manager_email=None,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                    #required, otherwise would cause exception if no managers because NoneType
+                    if len(managers) > 1:   
+                        data = password.delete_password_instance(client_email=self.__email,
+                                                            new_manager_email=None,
+                                                            session_key=self.__session_key,
+                                                            server_public_key=self.__server_public_key)
                         return data[0:23]
+                    
                     elif new_manager_email:
-                        data = password.delete_password_instance(client_email=self.__email,new_manager_email=new_manager_email,session_key=self.__session_key,server_public_key=self.__server_public_key)
-                        print("Data:", data)
+                        data = password.delete_password_instance(client_email=self.__email,
+                                                            new_manager_email=new_manager_email,
+                                                            session_key=self.__session_key,
+                                                            server_public_key=self.__server_public_key)
                         return data[0:23]
                     else:
                         return "New manager email required"
-               
-                   
+                               
                
     def get_password_users(self,passID, manager=False, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
                 if manager:
-                    data = password.get_password_managers(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                    data = password.get_password_managers(client_email=self.__email,session_key=self.__session_key,
+                                                          server_public_key=self.__server_public_key)
                 else:
-                    data = password.get_password_users(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                    data = password.get_password_users(client_email=self.__email,session_key=self.__session_key,
+                                                       server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.get_password_users(passID,iterations=1)
@@ -398,7 +427,8 @@ class Manager():
     def set_to_lockdown(self,passID, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.set_to_lockdown(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                data = password.set_to_lockdown(client_email=self.__email,session_key=self.__session_key,
+                                                server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.set_to_lockdown(passID,iterations=1)
@@ -409,15 +439,16 @@ class Manager():
                     #only passID needs to be stored
                     db = sqlite3.connect(rf"assets\assetdata.db")
                     curs = db.cursor()
-                    curs.execute("CREATE TABLE IF NOT EXISTS Lockdown(PassID VARCHAR(64) primary key)")
-                    curs.execute(f"INSERT INTO Lockdown VALUES('{passID}')")
+                    curs.execute("CREATE TABLE IF NOT EXISTS Lockdown(PassID VARCHAR(64) primary key, Email VARCHAR(64))")
+                    curs.execute(f"INSERT INTO Lockdown VALUES('{passID}', '{self.__email}')")
                     curs.close()                                             
                     db.commit()
                     db.close()
                 return data
                 
     def __remove_from_lockdown(self,passID, iterations=0):
-        data = pr.remove_lockdown(server_public_key=self.__server_public_key,session_key=self.__session_key,client_email=self.__email,passID=passID)
+        data = pr.remove_lockdown(server_public_key=self.__server_public_key,session_key=self.__session_key,
+                                  client_email=self.__email,passID=passID)
         if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.remove_from_lockdown(passID,iterations=1)
@@ -428,7 +459,8 @@ class Manager():
     def remove_password_user(self, passID, user_email, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.remove_password_user(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key, user_email=user_email)
+                data = password.remove_password_user(client_email=self.__email,session_key=self.__session_key,
+                                                     server_public_key=self.__server_public_key, user_email=user_email)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.remove_password_user(passID,iterations=1)
@@ -436,8 +468,10 @@ class Manager():
                         return "UNAUTHENTICATED"
                 elif data == "REMOVED USER":
                     threads = [
-                        Thread(target=password.get_password_users, args=(self.__email, self.__session_key, self.__server_public_key)),
-                        Thread(target=password.get_password_managers, args=(self.__email, self.__session_key, self.__server_public_key))
+                        Thread(target=password.get_password_users, args=(
+                            self.__email, self.__session_key, self.__server_public_key)),
+                        Thread(target=password.get_password_managers, args=(
+                            self.__email, self.__session_key, self.__server_public_key))
                     ]
                     for thread in threads:
                         thread.start()
@@ -461,7 +495,7 @@ class Manager():
                 success = "True"
                 db = sqlite3.connect(rf"assets\assetdata.db")
                 curs = db.cursor()
-                curs.execute("SELECT * FROM Lockdown")
+                curs.execute("SELECT * FROM Lockdown WHERE Email = ?", (self.__email,))
                 locked_passwords = curs.fetchall()
                 for password in locked_passwords:
                     data = self.__remove_from_lockdown(password[0])
@@ -479,7 +513,8 @@ class Manager():
     def add_manager(self,passID,new_manager_email, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.add_manager(client_email=self.__email,new_manager_email=new_manager_email,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                data = password.add_manager(client_email=self.__email,new_manager_email=new_manager_email,
+                                            session_key=self.__session_key,server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.add_manager(passID,new_manager_email,iterations=1)
@@ -491,7 +526,8 @@ class Manager():
     def update_password(self,passID,new_info,type, iterations=0):
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                data = password.update_password(client_email=self.__email,new_info=new_info,type=type,session_key=self.__session_key,server_public_key=self.__server_public_key)
+                data = password.update_password(client_email=self.__email,new_info=new_info,type=type,
+                                                session_key=self.__session_key,server_public_key=self.__server_public_key)
                 if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.update_password(passID,new_info,type,iterations=1)
@@ -505,7 +541,8 @@ class Manager():
         for password in self.__passwords:
             if password.get_passID() == str(passID):
                 #get user info such as Name and public key
-                user_info = pr.get_emails_sharing(server_public_key=self.__server_public_key,session_key=self.__session_key,requested_email=new_manager_email)
+                user_info = pr.get_emails_sharing(server_public_key=self.__server_public_key,
+                                                  session_key=self.__session_key,requested_email=new_manager_email)
                 if user_info in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
                     if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                         return self.share_password_check(passID,new_manager_email,iterations=1)
@@ -514,22 +551,29 @@ class Manager():
                 return user_info
 
     
-    def share_password_confirm(self,passID,new_manager_email,manager, iterations=0): #give manager as 1 or 0
+    def share_password_confirm(self,passID,new_manager_email,manager, iterations=0, recipient_UserID = None): #give manager as 1 or 0
         for password in self.__passwords:
             if password.get_passID() == str(passID):
-                user_info = pr.get_emails_sharing(server_public_key=self.__server_public_key,session_key=self.__session_key,requested_email=new_manager_email)
-                if user_info in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
-                    if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
-                        return self.share_password_confirm(passID,new_manager_email,manager,iterations=1)
-                    else:
-                        return "UNAUTHENTICATED"
-                recipient_UserID = user_info[0]
-                data = password.share_password(client_email=self.__email,session_key=self.__session_key,server_public_key=self.__server_public_key,
-                    recipient_userID=recipient_UserID,manager=manager,client_permanent_key=self.__client_permanent_key)
+                if not recipient_UserID:
+                    #avoids unnecessary requests to server if user has already downloaded publi key
+                    user_info = pr.get_emails_sharing(server_public_key=self.__server_public_key,
+                                                      session_key=self.__session_key,requested_email=new_manager_email)
+                    if user_info in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
+                        if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
+                            return self.share_password_confirm(passID,new_manager_email,manager,iterations=1)
+                        else:
+                            return "UNAUTHENTICATED"
+                    recipient_UserID = user_info[0]
+                    
+                data = password.share_password(client_email=self.__email,session_key=self.__session_key,
+                                                        server_public_key=self.__server_public_key,
+                                                        recipient_userID=recipient_UserID,manager=manager,
+                                                        client_permanent_key=self.__client_permanent_key)
                 return data
         
     
-    def scan_passwords(self): #can't run as a function of password class because all passwords are required from cross evaluation
+    def scan_passwords(self): 
+        #can't run as a function of password class because all passwords are required from cross evaluation
         if self.__scanned_passwords:
             return self.__scanned_passwords
         else:
@@ -570,13 +614,14 @@ class Manager():
             new_password_key = Encrypt.encrypt_password_key(password_key, new_permanent_key)
             new_password_keys[passID] = new_password_key
         new_password_hash = Hash.create_hash(new_password.encode('utf-8'), salt_type=self.__email)
-        data = pr.reset_client_password(self.__server_public_key,self.__session_key,self.__email,new_password_hash,self.__password,new_password_keys)
+        data = pr.reset_client_password(self.__server_public_key,self.__session_key,self.__email,
+                                        new_password_hash,self.__password,new_password_keys)
         if data in ["UNAUTHENTICATED","FAILED","KEY EXPIRED", "NO KEY"]:
             if iterations == 0 and self.__set_session_key() != "UNAUTHENTICATED":
                 return self.reset_client_password(new_password,iterations=1)
         if data == "RESET PASSWORD":
             #will automatically logout after this
-            #resave data if autologin is enabled
+            #resave data first if autologin is enabled, then will auto log back in
             login_data_is_saved = Application.attempt_get_saved_data()
             Application.delete_saved_login_data()
             if login_data_is_saved:

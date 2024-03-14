@@ -5,7 +5,6 @@ import hashlib
 import uuid
 import binascii
 import backEnd.AsymmetricEncryption.endToEnd_encryption as rsa
-import backEnd.SymmetricEncryption.XorEncryption as xor
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import random
@@ -24,25 +23,20 @@ def encryptdecrypt_directory(data, symmetric_key, encryptor, count=0):
         return data
     
     elif isinstance(data, (list, tuple, set)):
-        encrypted_data = [encryptdecrypt_directory(element, symmetric_key, encryptor) for element in data] #iterates through list and executes encryptdecrpt_directory on each element
+        encrypted_data = [encryptdecrypt_directory(element, symmetric_key, encryptor) for element in data] 
+        #iterates through list and executes encryptdecrpt_directory on each element
         return type(data)(encrypted_data)
     
     elif isinstance(data, str):
-        # length = (len(data) + count) % len(symmetric_key)
-        # start_pos = int(symmetric_key[length])
-        # symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
         return encryptdecrypt(data, str(symmetric_key), encryptor)
-        # return encryptor.encryptdecrypt(data, str(symmetric_key))
     else:
         return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
     
 def encryptdecrypt(data: str, key: str, encrypt: bool):
     
-    ADDED_STRING = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
-    # ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
+    ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
     ADDED_STRING += key
-    #only 50 characters required for corrent Fernet encryption
-    ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
+    ADDED_STRING = ADDED_STRING[-50:]  
     combined_string = ADDED_STRING.encode()
     hashed_key = hashlib.sha256(combined_string).digest()
     fernet_key_base64 = base64.urlsafe_b64encode(hashed_key)
@@ -63,8 +57,6 @@ class Encrypt:
     
     @staticmethod
     def encrypt_data_to_server(data, key):
-        # encryptor = xor.XorEncryption()
-        # encrypted_data = encryptdecrypt_directory(data, key, encryptor)
         encrypted_data = encryptdecrypt_directory(data, key, True)
         return encrypted_data
 
@@ -84,22 +76,22 @@ class Encrypt:
         return encrypted_password_key
 
     @staticmethod
-    def encrypt_symmetric_key_sharing(symmetric_key, e, n):
+    def encrypt_symmetric_key_sharing(symmetric_key: int, e: int, n: int) -> int:
         encrypted_key = rsa.AsyncRSA.encrypt_symmetric_key(symmetric_key, e, n, increments=3)
         return encrypted_key
 
     @staticmethod
-    def encrypt_password_key(password_key,client_permanent_key):
+    def encrypt_password_key(password_key: str,client_permanent_key: bytes) -> str:
         f = Fernet(client_permanent_key)
         encrypted_password_key = f.encrypt(password_key.encode('utf-8'))
-        return encrypted_password_key.decode('utf-8') #returned as string
+        return encrypted_password_key.decode('utf-8') 
     
     @staticmethod
-    def encrypt_password(password, password_key):  #pass as strings
+    def encrypt_password(password: str, password_key: str) -> str:
         password_key = password_key.encode('utf-8')
         f = Fernet(password_key)
         encrypted_password = f.encrypt(password.encode('utf-8'))
-        return encrypted_password.decode('utf-8') #returned as string
+        return encrypted_password.decode('utf-8') 
     
     
 class Decrypt:
@@ -111,8 +103,6 @@ class Decrypt:
     
     @staticmethod
     def decrypt_data_from_server(data, key):
-        # encryptor = xor.XorEncryption()
-        # decrypted_data = encryptdecrypt_directory(data, key, encryptor)
         decrypted_data = encryptdecrypt_directory(data, key, False)
         return decrypted_data
 
@@ -131,23 +121,23 @@ class Decrypt:
         return decrypted_password_key
 
     @staticmethod
-    def decrypt_symmetric_key_sharing(symmetric_key, d, n):
+    def decrypt_symmetric_key_sharing(symmetric_key: int, d: int, n: int) -> int:
         decrypted_key = rsa.AsyncRSA.decrypt_symmetric_key(symmetric_key, d, n, increments=3)
         return decrypted_key
 
     @staticmethod #symmetric decryption
-    def decrypt_password_key(password_key,client_permanent_key):
+    def decrypt_password_key(password_key: str,client_permanent_key: bytes) -> str:
         f = Fernet(client_permanent_key)
         decrypted_password_key = f.decrypt(password_key.encode('utf-8'))
-        return decrypted_password_key.decode('utf-8') #returned as string
+        return decrypted_password_key.decode('utf-8')
     
     @staticmethod
-    def decrypt_password(password, password_key): #pass as strings
+    def decrypt_password(password: str, password_key: str) -> str: 
         password = password.encode('utf-8')
         password_key = password_key.encode('utf-8')
         key = Fernet(password_key)
         decrypted_password = key.decrypt(password).decode('utf-8')
-        return decrypted_password  #returned as string
+        return decrypted_password 
 
     
 class Generate:
@@ -163,9 +153,9 @@ class Generate:
 
 
     @staticmethod
-    def generate_password_key():
+    def generate_password_key() -> str:
         key = Fernet.generate_key()
-        return key.decode('utf-8') #returned as a string
+        return key.decode('utf-8') 
     
     @staticmethod
     def generate_symmetric_key(length=24):
@@ -195,8 +185,7 @@ class Generate:
     @staticmethod
     def generate_fernet(extra=""):
         #TODO
-        ADDED_STRING = "748358A4B33C47299475E7F573FFEB67C374632AC342BC3537"
-        # ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
+        ADDED_STRING = os.getenv("ADDED_STRING") #stored as environment variable
         ADDED_STRING += extra
         #only 50 characters required for corrent Fernet encryption
         ADDED_STRING = ADDED_STRING[-50:]  #gets last 50 characters
@@ -213,7 +202,7 @@ class Generate:
         keys = list(map(int, keys))
         for key in keys:
             if key >= max_length:
-                time.sleep(0.00001)  #gives .dll opportunity to reset random time seed
+                time.sleep(0.00001)  #gives opportunity to reset random time seed
                 return False
         return True
     

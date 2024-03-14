@@ -1,1 +1,3 @@
-print("DELETED PASSWORD INSTANCE and ADDED MANAGER"[:43])
+except:
+    Application.delete_saved_login_data()
+    page.go('/')

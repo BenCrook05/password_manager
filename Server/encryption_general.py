@@ -45,7 +45,8 @@ class Encryption:
         curs = db.cursor()
         curs.execute(f"DELETE FROM AsymmetricKeys")
         today = str(date.today())
-        curs.execute(f"INSERT INTO AsymmetricKeys(e,d,n,date) VALUES('{ciphertext_public_key_str}','{ciphertext_private_key_str}','{ciphertext_public_n_str}','{today}')")
+        curs.execute(f"INSERT INTO AsymmetricKeys(e,d,n,date) VALUES('
+                     {ciphertext_public_key_str}','{ciphertext_private_key_str}','{ciphertext_public_n_str}','{today}')")
         curs.close()
         db.commit()
         db.close()
@@ -135,18 +136,16 @@ class Encryption:
         count += 1
         if isinstance(data, dict):
             for key, value in data.items():
-                data[key] = Encryption.encryptdecrypt_directory(value, symmetric_key, encryptor) #has to treat dic differently as can't iterate through
+                data[key] = Encryption.encryptdecrypt_directory(value, symmetric_key, encryptor) 
+                #has to treat dic differently as can't iterate through
             return data
         
         elif isinstance(data, (list, tuple, set)):
-            encrypted_data = [Encryption.encryptdecrypt_directory(element, symmetric_key, encryptor) for element in data] #iterates through list and executes encryptdecrpt_directory on each element
+            encrypted_data = [Encryption.encryptdecrypt_directory(element, symmetric_key, encryptor) for element in data] 
+            #iterates through list and executes encryptdecrpt_directory on each element
             return type(data)(encrypted_data)
         
         elif isinstance(data, str):
-            # length = (len(data) + count) % len(symmetric_key)
-            # start_pos = int(symmetric_key[length])
-            # symmetric_key = symmetric_key[start_pos:] + symmetric_key[:start_pos] 
-            # return encryptor.encryptdecrypt(data, str(symmetric_key), encryptor)
             return Encryption.encryptdecrypt(data,str(symmetric_key),encryptor)
         else:
             return data #doesn't encrypt if not a string (as can't encrypt int and boolean function etc)
@@ -186,22 +185,19 @@ class Encryption:
 
     @staticmethod
     def encrypt_data_to_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+
         encrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, True)
         return encrypted_data
 
     @staticmethod
     def decrypt_key_from_client(data):
         d, n = Encryption.get_server_key(0)
-        #print(f"Encrypted key: {data}")
         decrypted_key = rsa.AsyncRSA.decrypt_symmetric_key(data, d, n)
         return decrypted_key
 
     @staticmethod
     def decrypt_data_from_client(data, symmetric_key):
-        # encryptor = xor.XorEncryption()
-        # decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, encryptor)
+
         decrypted_data = Encryption.encryptdecrypt_directory(data, symmetric_key, False)
         return decrypted_data
 

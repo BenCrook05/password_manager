@@ -16,10 +16,15 @@ class Viewer(UserControl):
         self._passID = passID
         self._current_password = password
         self._current_manager = manager
-        self._current_password_viewing = TextButton(content=Text(' '.join(['•'] * len(self._current_password)),size=20,weight=FontWeight.BOLD),disabled=True)
-        self._visibility_icon = IconButton(icons.VISIBILITY_OFF,icon_size=25,on_click=self._unhide_password_viewing)
-        self._manager_checkbox = Checkbox(value = True if self._current_manager == 1 else False,disabled=False,on_change=self._return_to_on)
-        self._help_button = IconButton(icons.HELP_OUTLINE_ROUNDED,icon_size=25,on_click=self._homepage.help)
+        self._current_password_viewing = TextButton(content=
+                                                    Text(' '.join(['•'] * len(self._current_password)),
+                                                         size=20,weight=FontWeight.BOLD),disabled=True)
+        self._visibility_icon = IconButton(icons.VISIBILITY_OFF,icon_size=25,
+                                           on_click=self._unhide_password_viewing)
+        self._manager_checkbox = Checkbox(value = True if self._current_manager == 1 else False,
+                                          disabled=False,on_change=self._return_to_on)
+        self._help_button = IconButton(icons.HELP_OUTLINE_ROUNDED,icon_size=25,
+                                       on_click=self._homepage.help)
         self._col = Column()
         self._img = Icon()
         self._container_col = Column()
@@ -133,7 +138,8 @@ class PasswordViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_title)),
+                            IconButton(icons.CONTENT_COPY,icon_size=18,
+                                       on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_title)),
                             Text("Title:",size=15,),
                         ]),
                         Text(self.__current_title,size=20,weight=FontWeight.BOLD,color=TEXT_COLOUR),
@@ -146,7 +152,8 @@ class PasswordViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self._current_password)),
+                            IconButton(icons.CONTENT_COPY,icon_size=18,
+                                       on_click=lambda _: self._homepage.copy_to_clipboard(self._current_password)),
                             Text("Secrets:",size=15,),
                         ]),
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
@@ -162,7 +169,8 @@ class PasswordViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CALL_MISSED_OUTGOING_ROUNDED,icon_size=18,on_click=lambda _: self._homepage.go_to_url("https:\\"+self.__url)),
+                            IconButton(icons.CALL_MISSED_OUTGOING_ROUNDED,icon_size=18,
+                                       on_click=lambda _: self._homepage.go_to_url("https:\\"+self.__url)),
                             Text("URL:",size=15,),
                         ]),
                         Text(self.__url,size=20,weight=FontWeight.BOLD,color=TEXT_COLOUR),
@@ -175,7 +183,8 @@ class PasswordViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_username)),
+                            IconButton(icons.CONTENT_COPY,icon_size=18,
+                                       on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_username)),
                             Text("Username:",size=15),
                         ]),
                         Text(self.__current_username,size=20,weight=FontWeight.BOLD,color=TEXT_COLOUR),
@@ -200,7 +209,8 @@ class PasswordViewer(Viewer):
                 Divider(opacity=0.5, thickness=2, color=TEXT_COLOUR),
                 Row(
                     controls=[
-                        IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_additional_info)),
+                        IconButton(icons.CONTENT_COPY,icon_size=18,
+                                   on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_additional_info)),
                         Text("Additional Info:",size=15,),
                     ],
                     spacing=20,
@@ -232,7 +242,8 @@ class PasswordViewer(Viewer):
             self._img = Image(src_base64=image_content, height=50, width=50)
                 
         except Exception as e:
-            print(e)
+            #not able to get image from db
+            #so uses default image
             self._img = Icon(icons.PERSON_ROUNDED, color=TEXT_COLOUR, size=50)
         
         return super().build_full(self._col, self._img)
@@ -251,7 +262,8 @@ class InfoViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_title)),
+                            IconButton(icons.CONTENT_COPY,icon_size=18,
+                                       on_click=lambda _: self._homepage.copy_to_clipboard(self.__current_title)),
                             Text("Title:",size=15),
                         ]),
                         Text(self.__current_title,size=20,weight=FontWeight.BOLD),
@@ -264,7 +276,8 @@ class InfoViewer(Viewer):
                 Row(
                     controls=[
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
-                            IconButton(icons.CONTENT_COPY,icon_size=18,on_click=lambda _: self._homepage.copy_to_clipboard(self._current_password)),
+                            IconButton(icons.CONTENT_COPY,icon_size=18,
+                                       on_click=lambda _: self._homepage.copy_to_clipboard(self._current_password)),
                             Text("Secrets:",size=15,),
                         ]),
                         Row(alignment=MainAxisAlignment.CENTER, spacing=20,controls=[
@@ -293,6 +306,8 @@ class InfoViewer(Viewer):
             spacing=10,
         )
         
+        #always use default image
+        #could add feature to select an icon
         self._img = Icon(icons.PERSON_ROUNDED, color=TEXT_COLOUR, size=50)
         
         return super().build_full(self._col,self._img)

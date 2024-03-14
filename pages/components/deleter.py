@@ -34,11 +34,12 @@ class Deleter(UserControl):
                 new_manager_email = self.__new_manager_email_input.get_value()
                 if new_manager_email == "":
                     raise Exception("New manager email required")
+                
                 if new_manager_email != self.__data["email"]:
-                    data = self.__homepage.get_manager().delete_password_instance(self.__passID, new_manager_email)
-                    # if "DELETED PASSWORD INSTANCE" in data: #data[:23] == "DELETED PASSWORD INSTANCE"
-                    if True:
-                        print("DELETED PASSWORD INSTANCE")
+                    data = self.__homepage.get_manager().delete_password_instance
+                    (self.__passID, new_manager_email)
+                    
+                    if "DELETED PASSWORD INSTANCE" in data: #success
                         self.__homepage.get_page().snack_bar = SnackBar(
                             content=Text("Password Instance Deleted",color=TEXT_COLOUR),
                             bgcolor=BACKGROUND_COLOUR_2,
@@ -51,7 +52,8 @@ class Deleter(UserControl):
                         self.__homepage.refresh()
                     elif data == "NEED TO SHARE":
                         self.__homepage.get_page().snack_bar = SnackBar(
-                            content=Text("Password must be already shared with new manager",color=TEXT_COLOUR),
+                            content=Text("Password must be already shared with new manager",
+                                         color=TEXT_COLOUR),
                             bgcolor=BACKGROUND_COLOUR_2,
                             elevation=5,
                             margin=5,
@@ -73,18 +75,22 @@ class Deleter(UserControl):
                     self.__stack.controls.pop()
                     self.__stack.update()
                     self.__processing = False
+                    
             except Exception as e:
                 data = self.__homepage.get_manager().delete_password_instance(self.__passID)
-                if data == "New manager email required":
-                    self.__col.controls.insert(6,Text("New manager required or delete password entirely.", size=12, font_family="Afacad", color="red"))
+                
+                if data == "New manager email required": #edit display to request new email. 
+                    self.__col.controls.insert(6,Text(
+                        "New manager required or delete password entirely.", 
+                        size=12, font_family="Afacad", color="red"))
                     self.__new_manager_email_input = Input(icons.EMAIL, hint="New Manager Email")
                     self.__col.controls.insert(7,self.__new_manager_email_input)
                     self.__stack.controls.pop()
                     self.__col.update()
                     self.__stack.update()
                     self.__processing = False
-                # elif "DELETED PASSWORD INSTANCE" in data:
-                elif True:
+                    
+                elif "DELETED PASSWORD INSTANCE" in data:
                     self.__homepage.get_page().snack_bar = SnackBar(
                         content=Text("Password Instance Deleted",color=TEXT_COLOUR),
                         bgcolor=BACKGROUND_COLOUR_2,
@@ -180,16 +186,19 @@ class Deleter(UserControl):
             )
 
             self.__col.controls.extend([
-                Text("Delete all instances of password for all users?", size=15, font_family="Afacad", color=TEXT_COLOUR),
+                Text("Delete all instances of password for all users?", size=15, 
+                     font_family="Afacad", color=TEXT_COLOUR),
                 self.__delete_button,
                 Divider(height=10,color="transparent"),
-                Text("Delete only your instance of password?", size=15, font_family="Afacad", color=TEXT_COLOUR),
+                Text("Delete only your instance of password?", size=15, 
+                     font_family="Afacad", color=TEXT_COLOUR),
                 self.__delete_instance_button,
             ])
             
         else:
             self.__col.controls.extend([
-                Text("Delete password from your account?", size=15, font_family="Afacad", color=TEXT_COLOUR),
+                Text("Delete password from your account?", size=15, 
+                     font_family="Afacad", color=TEXT_COLOUR),
                 self.__delete_instance_button,
             ])
             
