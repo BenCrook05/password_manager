@@ -6,18 +6,13 @@ import RSAEncryption as rsa
 import re
 import traceback
 from datetime import datetime
-def write_errors(error_code="None",function_name="None"):
-    with open("/home/BenCrook/mysite/error.txt", "a") as file:
-        file.write(f"\n\n\nFunction attempt: {function_name}\nError code: 
-                   {str(error_code)}\nTime: {datetime.now().replace(second=0, microsecond=0)}")
-
+import connect
 
 class AsyncRSA:
     @staticmethod
     def generate_keys():
         encryptor = rsa.KeyGeneration()
         return encryptor.generateKeys()
-
 
     @staticmethod
     def encrypt(x,e,n,encryptor):
@@ -42,7 +37,7 @@ class AsyncRSA:
             return encrypted_key
 
         except Exception as e:
-            write_errors(traceback.format_exc(),"encrypt_symmetric_key")
+            connect.write_errors(traceback.format_exc(),"encrypt_symmetric_key")
             return None
 
     @staticmethod
@@ -54,18 +49,15 @@ class AsyncRSA:
             numbers_list = encrypted_key.split('-')
             numbers_list.remove('')
             decrypted_chunks = []
-            write_errors(numbers_list,"decrypt_symmetric_key, numbers_list")
+            connect.write_errors(numbers_list,"decrypt_symmetric_key, numbers_list")
             encryptor = rsa.KeyGeneration()
             decrypted_chunks = list(
                 map(lambda x: str(encryptor.decrypt(int(x), d, n)).zfill(4), numbers_list)
             )
-            write_errors(decrypted_chunks,"decrypt_symmetric_key, decrypted_chunks")
+            connect.write_errors(decrypted_chunks,"decrypt_symmetric_key, decrypted_chunks")
             decrypted_key =''.join(decrypted_chunks)
             return decrypted_key
 
         except Exception as e:
-            write_errors(traceback.format_exc(),"decrypt_symmetric_key")
+            connect.write_errors(traceback.format_exc(),"decrypt_symmetric_key")
             return None
-
-
-

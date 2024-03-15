@@ -9,7 +9,6 @@ import random
 from datetime import date, datetime
 import connect
 
-
 class Encryption:
     @staticmethod
     def generate_asymmetric_keys():
@@ -51,7 +50,6 @@ class Encryption:
         db.commit()
         db.close()
 
-
     @staticmethod
     def get_cipher_suite(include_day = False):
         '''
@@ -70,7 +68,6 @@ class Encryption:
         fernet_key = base64.urlsafe_b64encode(hashed_key)
         cipher_suite = Fernet(fernet_key)
         return cipher_suite
-
 
     ### get functions for private/public keys for asymmetric encryption
 
@@ -109,7 +106,6 @@ class Encryption:
         except Exception as e:
             Encryption.reset_server_key()
             return Encryption.get_server_key(key)
-
 
     # encrypts to store data on the database
     @staticmethod
@@ -218,3 +214,4 @@ class Encryption:
         else:
             return False
 
+ 
