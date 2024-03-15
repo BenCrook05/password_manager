@@ -9,6 +9,7 @@ from multiprocessing import Process
 
 
 def main(page: Page):
+    #define window properties
     page.window_title_bar_hidden = True
     page.horizontal_alignment = "center"
     page.vertical_alignment = "center"
@@ -34,6 +35,8 @@ def main(page: Page):
     
     page.on_window_event = on_window_event
 
+    #method called when the route of the page is changed from anywhere in codebase. 
+    #uses the view handler to find the next virtual page to display
     def route_change(route): 
         try:
             print(page.route)
@@ -50,14 +53,15 @@ def main(page: Page):
                     except Exception as e:
                         print(traceback.format_exc())
                         pass
-                starttime = datetime.now()
+                    
                 page.views[-1].controls[1].attempt_auto_login()
-                print(f"Time to load: {datetime.now() - starttime}")
                 
             elif page.route == "/Home":
-                processes.append(page.views[-1].controls[1].initialise())
+                processes.append(Process(target = page.views[-1].controls[1].initialise()))
                 processes.append(Process(target = page.views[-1].controls[1].run_background_tasks()))
+                
         except:
+            #catch a fatal error in the application and reload the homescreen
             Application.delete_saved_login_data()
             page.go('/')
 
